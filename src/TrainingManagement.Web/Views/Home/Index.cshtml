@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = "Accueil";
+}
+<section class="hero-section">
+    <div class="container py-5">
+        <div class="row align-items-center g-5 py-lg-5">
+            <div class="col-lg-7">
+                <span class="badge rounded-pill text-bg-primary-subtle text-primary mb-3">Votre avenir commence ici</span>
+                <h1 class="display-3 fw-bold lh-sm">Développez vos compétences, à votre rythme.</h1>
+                <p class="lead text-secondary my-4">Une plateforme claire et humaine pour apprendre avec des formateurs experts, suivre vos progrès et atteindre vos objectifs professionnels.</p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a class="btn btn-primary btn-lg px-4" asp-action="Courses">Explorer les formations</a>
+                    <a class="btn btn-outline-dark btn-lg px-4" asp-controller="Account" asp-action="Register">Créer un compte</a>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="hero-card shadow-lg">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <span class="fw-semibold">Votre progression</span><span class="text-success">+24 %</span>
+                    </div>
+                    <div class="progress mb-4" role="progressbar" aria-label="Progression" aria-valuenow="72" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar" style="width:72%">72 %</div>
+                    </div>
+                    <div class="row g-3 text-center">
+                        <div class="col-4"><div class="metric"><strong>12</strong><small>Cours</small></div></div>
+                        <div class="col-4"><div class="metric"><strong>8</strong><small>Terminés</small></div></div>
+                        <div class="col-4"><div class="metric"><strong>4.9</strong><small>Note</small></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="container py-5">
+    <div class="text-center mb-5"><h2 class="fw-bold">Tout pour réussir</h2><p class="text-secondary">Une expérience d’apprentissage pensée pour rester motivé.</p></div>
+    <div class="row g-4">
+        <div class="col-md-4"><div class="feature-card h-100"><div class="feature-icon">01</div><h3 class="h5">Parcours structurés</h3><p class="text-secondary mb-0">Des contenus organisés pour progresser étape par étape.</p></div></div>
+        <div class="col-md-4"><div class="feature-card h-100"><div class="feature-icon">02</div><h3 class="h5">Formateurs experts</h3><p class="text-secondary mb-0">Un accompagnement concret par des professionnels passionnés.</p></div></div>
+        <div class="col-md-4"><div class="feature-card h-100"><div class="feature-icon">03</div><h3 class="h5">Progression visible</h3><p class="text-secondary mb-0">Des indicateurs simples pour mesurer chaque avancée.</p></div></div>
+    </div>
+</section>
+<section class="container pb-5">
+    <div class="ai-section p-4 p-lg-5">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8"><span class="text-primary fw-semibold">Bientôt disponible</span><h2 class="fw-bold mt-2">Un formateur IA à vos côtés, 24 h/24</h2><p class="text-secondary mb-0">Notre futur avatar vocal répondra à vos questions et adaptera ses explications à votre rythme.</p></div>
+            <div class="col-lg-4 text-lg-end"><span class="ai-orb">AI</span></div>
+        </div>
+    </div>
+</section>

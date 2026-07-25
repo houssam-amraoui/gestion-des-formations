@@ -1,0 +1,67 @@
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · TrainingManagement</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+            <div class="container">
+                <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index">
+                    <span class="brand-mark">TM</span> TrainingManagement
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNavigation">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Accueil</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Courses">Formations</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="About">À propos</a></li>
+                    </ul>
+                    <div class="d-flex align-items-center gap-2 py-2">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            var currentUser = await UserManager.GetUserAsync(User);
+                            <a class="btn btn-outline-light btn-sm" asp-area="" asp-controller="Account" asp-action="Dashboard">Tableau de bord</a>
+                            <span class="text-white-50 small">@currentUser?.FullName</span>
+                            <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                                <button class="btn btn-primary btn-sm" type="submit">Déconnexion</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a class="btn btn-outline-light btn-sm" asp-area="" asp-controller="Account" asp-action="Login">Connexion</a>
+                            <a class="btn btn-primary btn-sm" asp-area="" asp-controller="Account" asp-action="Register">Inscription</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <main>
+        @if (TempData["SuccessMessage"] is string message)
+        {
+            <div class="container pt-3"><div class="alert alert-success">@message</div></div>
+        }
+        @RenderBody()
+    </main>
+    <footer class="border-top py-4 mt-auto">
+        <div class="container d-flex flex-wrap justify-content-between gap-2 text-secondary small">
+            <span>© 2026 TrainingManagement</span>
+            <span>Apprendre. Progresser. Réussir.</span>
+        </div>
+    </footer>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

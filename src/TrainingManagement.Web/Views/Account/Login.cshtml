@@ -1,0 +1,15 @@
+@model TrainingManagement.Web.ViewModels.Account.LoginViewModel
+@{ ViewData["Title"] = "Connexion"; }
+<div class="container auth-page">
+    <div class="auth-card auth-card-sm">
+        <h1 class="h2 fw-bold">Bon retour</h1><p class="text-secondary">Connectez-vous à votre espace.</p>
+        <form asp-action="Login" method="post" novalidate>
+            <input asp-for="ReturnUrl" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div class="mb-3"><label asp-for="Email" class="form-label"></label><input asp-for="Email" class="form-control" autocomplete="email" /><span asp-validation-for="Email" class="text-danger"></span></div>
+            <div class="mb-3"><label asp-for="Password" class="form-label"></label><input asp-for="Password" class="form-control" autocomplete="current-password" /><span asp-validation-for="Password" class="text-danger"></span></div>
+            <div class="form-check mb-4"><input asp-for="RememberMe" class="form-check-input" /><label asp-for="RememberMe" class="form-check-label"></label></div>
+            <button class="btn btn-primary w-100 py-2" type="submit">Se connecter</button>
+        </form>
+    </div>
+</div>

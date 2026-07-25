@@ -1,0 +1,25 @@
+## .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+TestResults/
+coverage/
+app-verification.*.log
+*.stdout.log
+*.stderr.log
+.app-verification.pid
+
+## Local databases and secrets
+*.db
+*.db-shm
+*.db-wal
+appsettings.Local.json
+.env
+
+## OS / tooling
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
