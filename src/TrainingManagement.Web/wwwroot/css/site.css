@@ -32,3 +32,19 @@ a { color:var(--tm-primary); }
 .dashboard-stat { display:flex; flex-direction:column; width:180px; margin-top:2rem; padding:1.5rem; border-radius:1rem; background:var(--tm-soft); }
 .dashboard-stat strong { font-size:2rem; }
 @media (max-width:767.98px) { .display-3{font-size:2.6rem}.dashboard-shell{grid-template-columns:1fr}.dashboard-shell aside{min-height:auto}.hero-card{transform:none}.navbar .form-control{min-height:auto} }
+.admin-page { padding-top:2.5rem; padding-bottom:4rem; }
+.admin-thumb { width:54px; height:42px; border-radius:.65rem; background:#ececff; color:var(--tm-primary); display:grid; place-items:center; overflow:hidden; font-weight:700; flex:0 0 auto; }
+.admin-thumb img { width:100%; height:100%; object-fit:cover; }
+.preserve-lines { white-space:pre-line; line-height:1.8; }
+.details-list dt { color:#6c7085; font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; }
+.details-list dd { margin-bottom:1rem; }
+.catalog-hero,.training-detail-hero { background:linear-gradient(135deg,#f7f7ff,#eef1ff); }
+.training-card { border:1px solid #e6e7ef; border-radius:1.25rem; overflow:hidden; background:#fff; display:flex; flex-direction:column; transition:.2s ease; }
+.training-card:hover { transform:translateY(-4px); box-shadow:0 1rem 2.5rem rgba(28,30,68,.1); }
+.training-image { height:190px; position:relative; background:#eeeefe; }
+.training-image img { width:100%; height:100%; object-fit:cover; }
+.training-image .badge { position:absolute; top:1rem; left:1rem; }
+.training-placeholder,.detail-placeholder { height:100%; display:grid; place-items:center; color:var(--tm-primary); font-size:1.5rem; font-weight:800; background:radial-gradient(circle,#fff 0,#e8e8ff 70%); }
+.detail-placeholder { min-height:280px; border-radius:1.5rem; }
+.detail-enroll-card { top:6rem; }
+.empty-state { padding:4rem 2rem; text-align:center; border:2px dashed #dfe1eb; border-radius:1.25rem; }

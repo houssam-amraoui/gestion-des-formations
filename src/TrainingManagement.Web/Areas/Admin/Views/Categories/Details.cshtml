@@ -1,0 +1,8 @@
+@model TrainingManagement.Web.ViewModels.Categories.CategoryDetailsViewModel
+@{ ViewData["Title"] = Model.Category.Name; }
+<div class="container admin-page">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-controller="Dashboard">Administration</a></li><li class="breadcrumb-item"><a asp-action="Index">Catégories</a></li><li class="breadcrumb-item active">@Model.Category.Name</li></ol></nav>
+    <div class="d-flex justify-content-between align-items-start gap-3 mb-4"><div><h1 class="h2 fw-bold">@Model.Category.Name</h1><code>@Model.Category.Slug</code></div><a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Category.Id">Modifier</a></div>
+    <div class="row g-4"><div class="col-lg-8"><div class="card border-0 shadow-sm"><div class="card-body p-4"><h2 class="h5">Description</h2><p class="text-secondary mb-0">@(Model.Category.Description ?? "Aucune description.")</p></div></div></div>
+    <div class="col-lg-4"><div class="card border-0 shadow-sm"><div class="card-body p-4"><dl class="mb-0"><dt>Statut</dt><dd><span class="badge @(Model.Category.IsActive ? "text-bg-success" : "text-bg-secondary")">@(Model.Category.IsActive ? "Active" : "Inactive")</span></dd><dt>Formations</dt><dd>@Model.Category.TrainingCount</dd><dt>Créée le</dt><dd>@Model.Category.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd></dl></div></div></div></div>
+</div>

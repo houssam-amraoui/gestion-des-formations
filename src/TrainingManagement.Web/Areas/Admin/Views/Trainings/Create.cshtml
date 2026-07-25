@@ -1,0 +1,3 @@
+@model TrainingManagement.Web.ViewModels.Trainings.TrainingCreateViewModel
+@{ ViewData["Title"] = "Nouvelle formation"; }
+<div class="container admin-page"><nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-controller="Dashboard">Administration</a></li><li class="breadcrumb-item"><a asp-action="Index">Formations</a></li><li class="breadcrumb-item active">Création</li></ol></nav><h1 class="h2 fw-bold mb-4">Nouvelle formation</h1><form asp-action="Create" method="post"><partial name="_Form" model="Model" /></form></div>

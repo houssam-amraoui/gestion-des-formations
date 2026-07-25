@@ -5,8 +5,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TrainingManagement.Application.Authentication;
+using TrainingManagement.Application.Categories;
+using TrainingManagement.Application.Trainings;
 using TrainingManagement.Infrastructure.Identity;
 using TrainingManagement.Infrastructure.Persistence;
+using TrainingManagement.Infrastructure.Services;
 
 namespace TrainingManagement.Infrastructure.Configuration;
 
@@ -59,7 +62,11 @@ public static class InfrastructureServiceExtensions
             .ValidateOnStart();
 
         services.AddScoped<IAccountRegistrationService, AccountRegistrationService>();
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<ITrainingService, TrainingService>();
         services.AddScoped<IdentityDataSeeder>();
+        services.Configure<SeedTrainerOptions>(configuration.GetSection(SeedTrainerOptions.SectionName));
+        services.AddScoped<DevelopmentDataSeeder>();
         return services;
     }
 }

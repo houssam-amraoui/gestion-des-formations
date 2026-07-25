@@ -1,0 +1,5 @@
+@model TrainingManagement.Application.Trainings.TrainingSummary
+<article class="training-card h-100">
+    <div class="training-image">@if(!string.IsNullOrWhiteSpace(Model.ThumbnailUrl)){<img src="@Model.ThumbnailUrl" alt="" loading="lazy" />}else{<div class="training-placeholder">TM</div>}<span class="badge text-bg-light">@Model.CategoryName</span></div>
+    <div class="p-4 d-flex flex-column h-100"><div class="d-flex gap-2 small text-secondary mb-3"><span>@Model.Level.ToFrenchLabel()</span><span>•</span><span>@Model.EstimatedDurationHours h</span></div><h2 class="h5 fw-bold">@Model.Title</h2><p class="text-secondary flex-grow-1">@Model.ShortDescription</p>@if(!string.IsNullOrWhiteSpace(Model.TrainerName)){<small class="text-secondary mb-3">Par @Model.TrainerName</small>}<div class="d-flex justify-content-between align-items-center"><strong class="text-primary">@(Model.IsFree ? "Gratuit" : $"{Model.Price:N2} MAD")</strong><a class="btn btn-sm btn-outline-primary" asp-controller="Trainings" asp-action="Details" asp-route-slug="@Model.Slug">Découvrir</a></div></div>
+</article>

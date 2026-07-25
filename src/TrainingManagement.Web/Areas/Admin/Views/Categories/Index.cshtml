@@ -1,0 +1,17 @@
+@model TrainingManagement.Web.ViewModels.Categories.CategoryListViewModel
+@{ ViewData["Title"] = "Catégories"; }
+<div class="container admin-page">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-controller="Dashboard">Administration</a></li><li class="breadcrumb-item active">Catégories</li></ol></nav>
+    <div class="d-flex flex-wrap justify-content-between gap-3 align-items-center mb-4"><div><h1 class="h2 fw-bold mb-1">Catégories</h1><p class="text-secondary mb-0">@Model.Results.TotalCount catégorie(s)</p></div><a class="btn btn-primary" asp-action="Create">Nouvelle catégorie</a></div>
+    <form method="get" class="card card-body border-0 shadow-sm mb-4"><div class="row g-2"><div class="col-md"><input class="form-control" name="search" value="@Model.Search" placeholder="Rechercher par nom…" /></div><div class="col-md-auto"><button class="btn btn-dark w-100">Rechercher</button></div></div></form>
+    <div class="card border-0 shadow-sm overflow-hidden"><div class="table-responsive"><table class="table align-middle mb-0">
+        <thead class="table-light"><tr><th>Nom</th><th>Slug</th><th>Formations</th><th>Statut</th><th>Création</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+        @if (Model.Results.Items.Count == 0) { <tr><td colspan="6" class="text-center py-5 text-secondary">Aucune catégorie trouvée.</td></tr> }
+        @foreach (var item in Model.Results.Items) {
+            <tr><td class="fw-semibold">@item.Name</td><td><code>@item.Slug</code></td><td>@item.TrainingCount</td><td><span class="badge @(item.IsActive ? "text-bg-success" : "text-bg-secondary")">@(item.IsActive ? "Active" : "Inactive")</span></td><td>@item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
+            <td class="text-end"><div class="btn-group btn-group-sm"><a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@item.Id">Détails</a><a class="btn btn-outline-primary" asp-action="Edit" asp-route-id="@item.Id">Modifier</a></div>
+            <div class="d-inline-flex gap-1 ms-1"><form asp-action="ToggleStatus" asp-route-id="@item.Id" method="post" data-confirm="Confirmer le changement de statut ?"><button class="btn btn-sm btn-outline-warning">@(item.IsActive ? "Désactiver" : "Réactiver")</button></form><form asp-action="Delete" asp-route-id="@item.Id" method="post" data-confirm="Supprimer définitivement cette catégorie ?"><button class="btn btn-sm btn-outline-danger" @(item.TrainingCount > 0 ? "disabled" : null)>Supprimer</button></form></div></td></tr>
+        }</tbody></table></div></div>
+    @if (Model.Results.TotalPages > 1) { <nav class="mt-4"><ul class="pagination justify-content-center">@for(var p=1;p<=Model.Results.TotalPages;p++){<li class="page-item @(p==Model.Results.Page?"active":"")"><a class="page-link" asp-route-page="@p" asp-route-search="@Model.Search">@p</a></li>}</ul></nav> }
+</div>

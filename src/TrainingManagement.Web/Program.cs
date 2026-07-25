@@ -40,6 +40,12 @@ await using (var seedScope = app.Services.CreateAsyncScope())
     await seeder.SeedAsync();
 }
 
+if (app.Environment.IsDevelopment())
+{
+    await using var demoScope = app.Services.CreateAsyncScope();
+    await demoScope.ServiceProvider.GetRequiredService<DevelopmentDataSeeder>().SeedAsync();
+}
+
 app.Run();
 
 public partial class Program;

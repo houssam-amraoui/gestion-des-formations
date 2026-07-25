@@ -107,3 +107,94 @@ dotnet test TrainingManagement.sln
 ```
 
 La suite couvre les constantes de rôles, la redirection par rôle, les validations d’inscription et l’attribution automatique du rôle `Learner`.
+
+## Gestion des catégories et formations
+
+L’étape 2 ajoute :
+
+- le CRUD administratif des catégories avec activation, recherche et pagination ;
+- la suppression d’une catégorie uniquement lorsqu’elle n’est liée à aucune formation ;
+- la gestion des formations avec catégorie, formateur, niveau, prix et statut ;
+- les actions de publication, dépublication et archivage ;
+- la recherche, les filtres, le tri et la pagination administratifs ;
+- un catalogue public contenant uniquement les formations publiées ;
+- des pages publiques de détails sans système d’inscription à ce stade.
+
+### Entités et relations
+
+- `Category` possède plusieurs `Training`.
+- Une catégorie utilisée est protégée par une relation `Restrict`.
+- Une formation possède une catégorie obligatoire et active.
+- Une formation peut référencer un utilisateur ayant le rôle `Trainer`.
+- La suppression éventuelle d’un formateur met `TrainerId` à `null` sans supprimer ses formations.
+- Les slugs des catégories et formations sont normalisés et uniques.
+- Les prix utilisent une précision SQL `decimal(18,2)`.
+
+### Routes
+
+Administration, rôle `Admin` requis :
+
+```text
+/Admin/Categories
+/Admin/Categories/Create
+/Admin/Categories/Details/{id}
+/Admin/Categories/Edit/{id}
+/Admin/Trainings
+/Admin/Trainings/Create
+/Admin/Trainings/Details/{id}
+/Admin/Trainings/Edit/{id}
+```
+
+Catalogue public :
+
+```text
+/Trainings
+/Trainings/{slug}
+```
+
+Les changements d’état et suppressions sont exclusivement disponibles en `POST` avec validation antiforgery.
+
+### Règles de publication
+
+Une formation ne peut être publiée que si son titre et sa description sont renseignés, sa catégorie est active et sa durée est strictement positive. La publication renseigne `PublishedAt` en UTC. Une formation archivée ne peut plus être modifiée ou publiée et n’apparaît jamais dans le catalogue public.
+
+Une formation gratuite reçoit toujours un prix égal à zéro. Le formateur sélectionné est revérifié côté serveur et doit être un utilisateur actif possédant le rôle `Trainer`.
+
+### Données de démonstration
+
+En `Development`, le seed idempotent crée :
+
+- Développement Web ;
+- Développement Mobile ;
+- Intelligence Artificielle ;
+- Bases de données ;
+- trois formations couvrant les statuts brouillon/publiée et les tarifs gratuit/payant.
+
+Compte formateur :
+
+- E-mail : `trainer@training.local`
+- Mot de passe : `Trainer123!`
+
+Configuration correspondante :
+
+```text
+SeedTrainer__Email
+SeedTrainer__Password
+SeedTrainer__FirstName
+SeedTrainer__LastName
+```
+
+### Migration de l’étape 2
+
+```powershell
+dotnet tool restore
+dotnet tool run dotnet-ef database update `
+  --project src/TrainingManagement.Infrastructure/TrainingManagement.Infrastructure.csproj `
+  --startup-project src/TrainingManagement.Web/TrainingManagement.Web.csproj
+```
+
+Migration : `AddCategoriesAndTrainings`.
+
+## Prochaine étape recommandée
+
+La prochaine étape peut ajouter les modules et cours d’une formation, avec leur ordre, contenu et règles d’accès, sans introduire encore les quiz, inscriptions, progression ou intégrations IA.

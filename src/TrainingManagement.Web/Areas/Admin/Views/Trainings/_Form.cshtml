@@ -1,0 +1,21 @@
+@model TrainingManagement.Web.ViewModels.Trainings.TrainingCreateViewModel
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+<div class="card border-0 shadow-sm mb-4"><div class="card-body p-4"><h2 class="h5 mb-4">Présentation</h2><div class="row g-3">
+    <div class="col-md-8"><label asp-for="Title" class="form-label"></label><input asp-for="Title" class="form-control" data-slug-source /><span asp-validation-for="Title" class="text-danger"></span></div>
+    <div class="col-md-4"><label asp-for="Slug" class="form-label"></label><input asp-for="Slug" class="form-control" data-slug-target /><span asp-validation-for="Slug" class="text-danger"></span></div>
+    <div class="col-12"><label asp-for="ShortDescription" class="form-label"></label><textarea asp-for="ShortDescription" class="form-control" rows="2"></textarea><span asp-validation-for="ShortDescription" class="text-danger"></span></div>
+    <div class="col-12"><label asp-for="Description" class="form-label"></label><textarea asp-for="Description" class="form-control" rows="8"></textarea><span asp-validation-for="Description" class="text-danger"></span></div>
+    <div class="col-12"><label asp-for="ThumbnailUrl" class="form-label"></label><input asp-for="ThumbnailUrl" class="form-control" /><span asp-validation-for="ThumbnailUrl" class="text-danger"></span></div>
+</div></div></div>
+<div class="card border-0 shadow-sm mb-4"><div class="card-body p-4"><h2 class="h5 mb-4">Organisation</h2><div class="row g-3">
+    <div class="col-md-6"><label asp-for="CategoryId" class="form-label"></label><select asp-for="CategoryId" asp-items="Model.Categories" class="form-select"><option value="">Choisir une catégorie</option></select><span asp-validation-for="CategoryId" class="text-danger"></span></div>
+    <div class="col-md-6"><label asp-for="TrainerId" class="form-label"></label><select asp-for="TrainerId" asp-items="Model.Trainers" class="form-select"><option value="">Sans formateur</option></select><span asp-validation-for="TrainerId" class="text-danger"></span></div>
+    <div class="col-md-4"><label asp-for="Level" class="form-label"></label><select asp-for="Level" class="form-select">@foreach(var level in Enum.GetValues<TrainingLevel>()){<option value="@level">@level.ToFrenchLabel()</option>}</select></div>
+    <div class="col-md-4"><label asp-for="Language" class="form-label"></label><input asp-for="Language" class="form-control" /><span asp-validation-for="Language" class="text-danger"></span></div>
+    <div class="col-md-4"><label asp-for="EstimatedDurationHours" class="form-label"></label><input asp-for="EstimatedDurationHours" class="form-control" /><span asp-validation-for="EstimatedDurationHours" class="text-danger"></span></div>
+</div></div></div>
+<div class="card border-0 shadow-sm mb-4"><div class="card-body p-4"><h2 class="h5 mb-4">Tarification</h2><div class="row g-3 align-items-end">
+    <div class="col-md-4"><div class="form-check form-switch mb-2"><input asp-for="IsFree" class="form-check-input" data-free-toggle /><label asp-for="IsFree" class="form-check-label"></label></div></div>
+    <div class="col-md-4"><label asp-for="Price" class="form-label"></label><div class="input-group"><input asp-for="Price" class="form-control" data-price /><span class="input-group-text">MAD</span></div><span asp-validation-for="Price" class="text-danger"></span></div>
+</div></div></div>
+<div class="d-flex gap-2"><button class="btn btn-primary" type="submit">Enregistrer</button><a class="btn btn-outline-secondary" asp-action="Index">Annuler</a></div>

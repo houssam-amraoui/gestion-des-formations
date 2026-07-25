@@ -22,7 +22,7 @@
                 <div class="collapse navbar-collapse" id="mainNavigation">
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Accueil</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Courses">Formations</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Trainings" asp-action="Index">Formations</a></li>
                         <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="About">À propos</a></li>
                     </ul>
                     <div class="d-flex align-items-center gap-2 py-2">
@@ -49,6 +49,10 @@
         @if (TempData["SuccessMessage"] is string message)
         {
             <div class="container pt-3"><div class="alert alert-success">@message</div></div>
+        }
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="container pt-3"><div class="alert alert-danger">@errorMessage</div></div>
         }
         @RenderBody()
     </main>
