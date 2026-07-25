@@ -4,6 +4,22 @@ namespace TrainingManagement.Web.Services;
 
 public static class TrainingDisplayExtensions
 {
+    public static string ToFrenchLabel(this AssessmentType value) => value switch
+    {
+        AssessmentType.Practice => "Entraînement",
+        AssessmentType.Quiz => "Quiz",
+        AssessmentType.Exam => "Examen",
+        _ => value.ToString()
+    };
+
+    public static string ToFrenchLabel(this QuestionType value) => value switch
+    {
+        QuestionType.SingleChoice => "Choix unique",
+        QuestionType.MultipleChoice => "Choix multiples",
+        QuestionType.TrueFalse => "Vrai ou Faux",
+        QuestionType.ShortAnswer => "Réponse courte",
+        _ => value.ToString()
+    };
     public static string ToFrenchLabel(this LessonContentType type) => type switch
     {
         LessonContentType.Text => "Texte",

@@ -22,6 +22,7 @@ public sealed class Lesson
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public ICollection<LessonContent> Contents { get; set; } = new List<LessonContent>();
+    public ICollection<Assessment> Assessments { get; set; } = new List<Assessment>();
 
     public void Publish(DateTime utcNow)
     {

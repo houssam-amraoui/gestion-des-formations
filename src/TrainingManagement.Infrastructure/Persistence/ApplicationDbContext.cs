@@ -13,6 +13,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<TrainingModule> TrainingModules => Set<TrainingModule>();
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<LessonContent> LessonContents => Set<LessonContent>();
+    public DbSet<Assessment> Assessments => Set<Assessment>();
+    public DbSet<Question> Questions => Set<Question>();
+    public DbSet<AnswerOption> AnswerOptions => Set<AnswerOption>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -91,6 +94,36 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
                 .WithMany(lesson => lesson.Contents)
                 .HasForeignKey(content => content.LessonId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Assessment>(entity =>
+        {
+            entity.Property(item => item.Title).HasMaxLength(200).IsRequired();
+            entity.Property(item => item.Slug).HasMaxLength(220).IsRequired();
+            entity.Property(item => item.Description).HasMaxLength(2000);
+            entity.Property(item => item.PassingScore).HasPrecision(5, 2);
+            entity.HasIndex(item => new { item.LessonId, item.Slug }).IsUnique();
+            entity.HasIndex(item => new { item.LessonId, item.Order }).IsUnique();
+            entity.HasOne(item => item.Lesson).WithMany(item => item.Assessments)
+                .HasForeignKey(item => item.LessonId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Question>(entity =>
+        {
+            entity.Property(item => item.Statement).IsRequired();
+            entity.Property(item => item.ExpectedAnswer).HasMaxLength(2000);
+            entity.Property(item => item.Points).HasPrecision(10, 2);
+            entity.HasIndex(item => new { item.AssessmentId, item.Order }).IsUnique();
+            entity.HasOne(item => item.Assessment).WithMany(item => item.Questions)
+                .HasForeignKey(item => item.AssessmentId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<AnswerOption>(entity =>
+        {
+            entity.Property(item => item.Text).HasMaxLength(1000).IsRequired();
+            entity.HasIndex(item => new { item.QuestionId, item.Order }).IsUnique();
+            entity.HasOne(item => item.Question).WithMany(item => item.AnswerOptions)
+                .HasForeignKey(item => item.QuestionId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

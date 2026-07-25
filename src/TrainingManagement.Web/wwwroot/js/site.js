@@ -39,3 +39,18 @@ if (contentType && textFields && urlFields) {
     contentType.addEventListener("change", updateContentFields);
     updateContentFields();
 }
+
+document.querySelectorAll("[data-question-type]").forEach(select => {
+    const form = select.closest("form");
+    const expected = form?.querySelector("[data-expected-answer]");
+    const help = form?.querySelector("[data-question-help]");
+    const refresh = () => {
+        const shortAnswer = select.value === "3";
+        if (expected) expected.hidden = !shortAnswer;
+        if (help) help.textContent = shortAnswer
+            ? "Une réponse attendue est obligatoire. Aucun choix ne sera accepté."
+            : "Ajoutez ensuite les choix de réponses avant de publier la question.";
+    };
+    select.addEventListener("change", refresh);
+    refresh();
+});

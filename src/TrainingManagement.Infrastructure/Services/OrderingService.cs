@@ -32,6 +32,31 @@ internal static class OrderingService
         return order;
     }
 
+    public static async Task<int> PrepareAssessmentInsertAsync(ApplicationDbContext db, int parentId, int? requested, CancellationToken token)
+    {
+        var items = await db.Assessments.Where(x => x.LessonId == parentId)
+            .OrderBy(x => x.IsArchived).ThenBy(x => x.Order).ToListAsync(token);
+        var order = Math.Clamp(requested ?? items.Count + 1, 1, items.Count + 1);
+        await ShiftAsync(db, items.Where(x => x.Order >= order), x => x.Order, (x, value) => x.Order = value, token);
+        return order;
+    }
+
+    public static async Task<int> PrepareQuestionInsertAsync(ApplicationDbContext db, int parentId, int? requested, CancellationToken token)
+    {
+        var items = await db.Questions.Where(x => x.AssessmentId == parentId).OrderBy(x => x.Order).ToListAsync(token);
+        var order = Math.Clamp(requested ?? items.Count + 1, 1, items.Count + 1);
+        await ShiftAsync(db, items.Where(x => x.Order >= order), x => x.Order, (x, value) => x.Order = value, token);
+        return order;
+    }
+
+    public static async Task<int> PrepareAnswerInsertAsync(ApplicationDbContext db, int parentId, int? requested, CancellationToken token)
+    {
+        var items = await db.AnswerOptions.Where(x => x.QuestionId == parentId).OrderBy(x => x.Order).ToListAsync(token);
+        var order = Math.Clamp(requested ?? items.Count + 1, 1, items.Count + 1);
+        await ShiftAsync(db, items.Where(x => x.Order >= order), x => x.Order, (x, value) => x.Order = value, token);
+        return order;
+    }
+
     public static Task NormalizeModulesAsync(ApplicationDbContext db, int parentId, CancellationToken token) =>
         NormalizeAsync(db, db.TrainingModules.Where(x => x.TrainingId == parentId)
             .OrderBy(x => x.IsArchived).ThenBy(x => x.Order), (x, value) => x.Order = value, token);
@@ -42,6 +67,16 @@ internal static class OrderingService
 
     public static Task NormalizeContentsAsync(ApplicationDbContext db, int parentId, CancellationToken token) =>
         NormalizeAsync(db, db.LessonContents.Where(x => x.LessonId == parentId)
+            .OrderBy(x => x.Order), (x, value) => x.Order = value, token);
+
+    public static Task NormalizeAssessmentsAsync(ApplicationDbContext db, int parentId, CancellationToken token) =>
+        NormalizeAsync(db, db.Assessments.Where(x => x.LessonId == parentId)
+            .OrderBy(x => x.IsArchived).ThenBy(x => x.Order), (x, value) => x.Order = value, token);
+    public static Task NormalizeQuestionsAsync(ApplicationDbContext db, int parentId, CancellationToken token) =>
+        NormalizeAsync(db, db.Questions.Where(x => x.AssessmentId == parentId)
+            .OrderBy(x => x.Order), (x, value) => x.Order = value, token);
+    public static Task NormalizeAnswersAsync(ApplicationDbContext db, int parentId, CancellationToken token) =>
+        NormalizeAsync(db, db.AnswerOptions.Where(x => x.QuestionId == parentId)
             .OrderBy(x => x.Order), (x, value) => x.Order = value, token);
 
     public static async Task RepositionModuleAsync(ApplicationDbContext db, TrainingModule current, int requested, CancellationToken token)
@@ -63,6 +98,28 @@ internal static class OrderingService
     public static async Task RepositionContentAsync(ApplicationDbContext db, LessonContent current, int requested, CancellationToken token)
     {
         var items = await db.LessonContents.Where(x => x.LessonId == current.LessonId && x.Id != current.Id)
+            .OrderBy(x => x.Order).ToListAsync(token);
+        items.Insert(Math.Clamp(requested, 1, items.Count + 1) - 1, current);
+        await AssignAsync(db, items, (x, value) => x.Order = value, token);
+    }
+
+    public static async Task RepositionAssessmentAsync(ApplicationDbContext db, Assessment current, int requested, CancellationToken token)
+    {
+        var items = await db.Assessments.Where(x => x.LessonId == current.LessonId && x.Id != current.Id)
+            .OrderBy(x => x.IsArchived).ThenBy(x => x.Order).ToListAsync(token);
+        items.Insert(Math.Clamp(requested, 1, items.Count + 1) - 1, current);
+        await AssignAsync(db, items, (x, value) => x.Order = value, token);
+    }
+    public static async Task RepositionQuestionAsync(ApplicationDbContext db, Question current, int requested, CancellationToken token)
+    {
+        var items = await db.Questions.Where(x => x.AssessmentId == current.AssessmentId && x.Id != current.Id)
+            .OrderBy(x => x.Order).ToListAsync(token);
+        items.Insert(Math.Clamp(requested, 1, items.Count + 1) - 1, current);
+        await AssignAsync(db, items, (x, value) => x.Order = value, token);
+    }
+    public static async Task RepositionAnswerAsync(ApplicationDbContext db, AnswerOption current, int requested, CancellationToken token)
+    {
+        var items = await db.AnswerOptions.Where(x => x.QuestionId == current.QuestionId && x.Id != current.Id)
             .OrderBy(x => x.Order).ToListAsync(token);
         items.Insert(Math.Clamp(requested, 1, items.Count + 1) - 1, current);
         await AssignAsync(db, items, (x, value) => x.Order = value, token);
@@ -93,6 +150,34 @@ internal static class OrderingService
         var current = await db.LessonContents.FindAsync([id], token);
         if (current is null) return false;
         var sibling = await db.LessonContents.Where(x => x.LessonId == current.LessonId)
+            .Where(x => direction < 0 ? x.Order < current.Order : x.Order > current.Order)
+            .OrderBy(x => direction < 0 ? -x.Order : x.Order).FirstOrDefaultAsync(token);
+        return await SwapAsync(db, current, sibling, x => x.Order, (x, value) => x.Order = value, token);
+    }
+
+    public static async Task<bool> MoveAssessmentAsync(ApplicationDbContext db, int id, int direction, CancellationToken token)
+    {
+        var current = await db.Assessments.FindAsync([id], token);
+        if (current is null || current.IsArchived) return false;
+        var sibling = await db.Assessments.Where(x => x.LessonId == current.LessonId && !x.IsArchived)
+            .Where(x => direction < 0 ? x.Order < current.Order : x.Order > current.Order)
+            .OrderBy(x => direction < 0 ? -x.Order : x.Order).FirstOrDefaultAsync(token);
+        return await SwapAsync(db, current, sibling, x => x.Order, (x, value) => x.Order = value, token);
+    }
+    public static async Task<bool> MoveQuestionAsync(ApplicationDbContext db, int id, int direction, CancellationToken token)
+    {
+        var current = await db.Questions.FindAsync([id], token);
+        if (current is null) return false;
+        var sibling = await db.Questions.Where(x => x.AssessmentId == current.AssessmentId)
+            .Where(x => direction < 0 ? x.Order < current.Order : x.Order > current.Order)
+            .OrderBy(x => direction < 0 ? -x.Order : x.Order).FirstOrDefaultAsync(token);
+        return await SwapAsync(db, current, sibling, x => x.Order, (x, value) => x.Order = value, token);
+    }
+    public static async Task<bool> MoveAnswerAsync(ApplicationDbContext db, int id, int direction, CancellationToken token)
+    {
+        var current = await db.AnswerOptions.FindAsync([id], token);
+        if (current is null) return false;
+        var sibling = await db.AnswerOptions.Where(x => x.QuestionId == current.QuestionId)
             .Where(x => direction < 0 ? x.Order < current.Order : x.Order > current.Order)
             .OrderBy(x => direction < 0 ? -x.Order : x.Order).FirstOrDefaultAsync(token);
         return await SwapAsync(db, current, sibling, x => x.Order, (x, value) => x.Order = value, token);

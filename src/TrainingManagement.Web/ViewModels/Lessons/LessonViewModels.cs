@@ -43,4 +43,6 @@ public sealed class LessonPageViewModel
 {
     public required PublicLessonPage Lesson { get; init; }
     public bool IsAdminPreview { get; init; }
+    public IReadOnlyCollection<TrainingManagement.Application.Assessments.PublicAssessmentCard> Assessments { get; init; }
+        = Array.Empty<TrainingManagement.Application.Assessments.PublicAssessmentCard>();
 }

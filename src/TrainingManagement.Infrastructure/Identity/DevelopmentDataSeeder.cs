@@ -19,6 +19,7 @@ public sealed class DevelopmentDataSeeder(
         var categories = await SeedCategoriesAsync();
         await SeedTrainingsAsync(categories, trainer.Id);
         await SeedPedagogicalContentAsync();
+        await SeedAssessmentsAsync();
     }
 
     private async Task<ApplicationUser> SeedTrainerAsync()
@@ -218,5 +219,103 @@ public sealed class DevelopmentDataSeeder(
     {
         if (!lesson.IsPublished) lesson.Publish(DateTime.UtcNow);
         return Task.CompletedTask;
+    }
+
+    private async Task SeedAssessmentsAsync()
+    {
+        var lesson = await dbContext.Lessons
+            .Include(x => x.TrainingModule).ThenInclude(x => x.Training)
+            .SingleAsync(x => x.Slug == "presentation-dotnet-aspnet-core");
+
+        var quiz = await dbContext.Assessments.Include(x => x.Questions).ThenInclude(x => x.AnswerOptions)
+            .SingleOrDefaultAsync(x => x.LessonId == lesson.Id && x.Slug == "quiz-introduction-aspnet-core");
+        if (quiz is null)
+        {
+            quiz = new Assessment
+            {
+                LessonId = lesson.Id, Lesson = lesson, Title = "Quiz d’introduction à ASP.NET Core",
+                Slug = "quiz-introduction-aspnet-core", Description = "Validez les notions essentielles de cette introduction.",
+                AssessmentType = AssessmentType.Quiz, Order = 1, PassingScore = 70,
+                TimeLimitMinutes = 10, MaximumAttempts = 3, ShowCorrectAnswers = true
+            };
+            dbContext.Assessments.Add(quiz);
+            await dbContext.SaveChangesAsync();
+        }
+
+        await SeedQuestionAsync(quiz, 1, QuestionType.SingleChoice,
+            "Quel composant reçoit principalement les requêtes HTTP dans une application ASP.NET Core MVC ?",
+            1, null, [("Controller", true), ("View", false), ("Model", false), ("Migration", false)]);
+        await SeedQuestionAsync(quiz, 2, QuestionType.MultipleChoice,
+            "Quels éléments appartiennent au modèle MVC ?", 3, null,
+            [("Model", true), ("View", true), ("Controller", true), ("Repository Git", false)]);
+        await SeedQuestionAsync(quiz, 3, QuestionType.TrueFalse,
+            "Razor est utilisé pour générer des vues dynamiques.", 1, null,
+            [("Vrai", true), ("Faux", false)]);
+        await SeedQuestionAsync(quiz, 4, QuestionType.ShortAnswer,
+            "Quel fichier contient généralement le point d’entrée d’une application ASP.NET Core moderne ?",
+            1, "Program.cs", []);
+
+        quiz = await dbContext.Assessments.Include(x => x.Lesson).ThenInclude(x => x.TrainingModule)
+            .ThenInclude(x => x.Training).Include(x => x.Questions).SingleAsync(x => x.Id == quiz.Id);
+        quiz.Publish(DateTime.UtcNow);
+
+        var practice = await dbContext.Assessments.SingleOrDefaultAsync(x =>
+            x.LessonId == lesson.Id && x.Slug == "exercice-pratique-mvc");
+        if (practice is null)
+        {
+            practice = new Assessment
+            {
+                LessonId = lesson.Id, Title = "Exercice pratique MVC", Slug = "exercice-pratique-mvc",
+                Description = "Exercice d’entraînement non noté.", AssessmentType = AssessmentType.Practice,
+                Order = 2, PassingScore = 0
+            };
+            dbContext.Assessments.Add(practice);
+            await dbContext.SaveChangesAsync();
+        }
+        await SeedQuestionAsync(practice, 1, QuestionType.ShortAnswer,
+            "Nommez les trois responsabilités principales de MVC.", 0, "Model, View et Controller", [], false);
+        await SeedQuestionAsync(practice, 2, QuestionType.ShortAnswer,
+            "Quel moteur de vues est utilisé par ASP.NET Core MVC ?", 0, "Razor", [], false);
+        await dbContext.SaveChangesAsync();
+    }
+
+    private async Task SeedQuestionAsync(Assessment assessment, int order, QuestionType type,
+        string statement, decimal points, string? expectedAnswer,
+        IReadOnlyCollection<(string Text, bool Correct)> options, bool published = true)
+    {
+        var question = await dbContext.Questions.Include(x => x.AnswerOptions)
+            .SingleOrDefaultAsync(x => x.AssessmentId == assessment.Id && x.Order == order);
+        if (question is null)
+        {
+            question = new Question
+            {
+                AssessmentId = assessment.Id, Assessment = assessment, QuestionType = type,
+                Statement = statement, Order = order, Points = points,
+                ExpectedAnswer = expectedAnswer, Explanation = "Explication de référence pour le formateur."
+            };
+            dbContext.Questions.Add(question);
+            await dbContext.SaveChangesAsync();
+        }
+        var optionOrder = 1;
+        foreach (var option in options)
+        {
+            if (!question.AnswerOptions.Any(x => x.Text == option.Text))
+            {
+                var entity = new AnswerOption
+                {
+                    QuestionId = question.Id, Question = question, Text = option.Text,
+                    Order = optionOrder, IsCorrect = option.Correct
+                };
+                dbContext.AnswerOptions.Add(entity);
+            }
+            optionOrder++;
+        }
+        await dbContext.SaveChangesAsync();
+        if (published && !question.IsPublished)
+        {
+            question.Assessment = assessment;
+            question.Publish(DateTime.UtcNow);
+            await dbContext.SaveChangesAsync();
+        }
     }
 }

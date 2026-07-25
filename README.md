@@ -86,6 +86,7 @@ Migrations existantes :
 - `InitialIdentity`
 - `AddCategoriesAndTrainings`
 - `AddModulesLessonsAndContents`
+- `AddAssessmentsQuestionsAndAnswers`
 
 En production, le fournisseur sélectionné est SQL Server. Les migrations ne sont jamais appliquées automatiquement : elles doivent faire partie d’une procédure de déploiement contrôlée.
 
@@ -241,10 +242,72 @@ dotnet test TrainingManagement.sln
 
 La suite couvre notamment Identity et les rôles, les catégories et formations, l’unicité des slugs et des ordres, les règles de publication et d’archivage, le déplacement des éléments, la validation des URL, les aperçus publics, l’isolation des formateurs, les autorisations et l’idempotence du seed.
 
+## Exercices, questions et quiz
+
+L’étape 4 complète la hiérarchie :
+
+```text
+Training → TrainingModule → Lesson → Assessment → Question → AnswerOption
+```
+
+Une leçon peut contenir plusieurs évaluations de type `Practice` (Entraînement), `Quiz` ou `Exam` (Examen). Les questions acceptent `SingleChoice`, `MultipleChoice`, `TrueFalse` et `ShortAnswer`.
+
+Règles principales :
+
+- le slug et l’ordre d’une évaluation sont uniques dans sa leçon ;
+- l’ordre d’une question est unique dans son évaluation ;
+- l’ordre d’un choix est unique dans sa question ;
+- la note minimale est comprise entre 0 et 100 ;
+- les limites de temps et de tentatives, lorsqu’elles existent, sont positives ;
+- une évaluation exige une question publiée avant publication ;
+- un examen exige au moins une question publiée avec des points ;
+- les éléments archivés ne sont jamais publics ;
+- `SingleChoice` exige au moins deux choix et exactement une bonne réponse ;
+- `MultipleChoice` exige au moins deux choix et au moins une bonne réponse ;
+- `TrueFalse` exige exactement les choix Vrai et Faux et une seule bonne réponse ;
+- `ShortAnswer` interdit les choix et exige une réponse attendue ;
+- la réponse attendue et les indicateurs de correction ne font pas partie des modèles publics.
+
+Routes Admin :
+
+```text
+/Admin/Assessments?lessonId={id}
+/Admin/Assessments/Details/{id}
+/Admin/Assessments/Preview/{id}
+/Admin/Questions?assessmentId={id}
+/Admin/Questions/Details/{id}
+/Admin/AnswerOptions?questionId={id}
+```
+
+Toutes les mutations utilisent POST, antiforgery et les services applicatifs.
+
+Routes Trainer, en lecture seule et limitées aux formations affectées :
+
+```text
+/Trainer/Assessments?lessonId={id}
+/Trainer/Assessments/Details/{id}
+```
+
+Route publique :
+
+```text
+/Trainings/{trainingSlug}/Modules/{moduleSlug}/Lessons/{lessonSlug}/Assessments/{assessmentSlug}
+```
+
+Le visiteur ne voit que les évaluations et questions publiées d’une leçon publique en aperçu. Les choix sont affichés sans bonne réponse et aucune soumission n’est disponible.
+
+Le seed Development crée le quiz publié `Quiz d’introduction à ASP.NET Core`, ses quatre types de questions et leurs choix, ainsi que l’exercice non publié `Exercice pratique MVC`.
+
+Migration de l’étape :
+
+```text
+AddAssessmentsQuestionsAndAnswers
+```
+
 ## Limites actuelles
 
-Cette étape n’implémente pas les téléversements de fichiers, modules de cours avancés, exercices, quiz, examens, inscriptions, progression, paiements, avatar IA, Anam.ai, HeyGen, Docker ou déploiement Railway. Les médias pédagogiques sont référencés par URL.
+Cette étape n’implémente pas les tentatives, réponses des apprenants, notes individuelles, inscriptions, progression, certificats, paiements, avatar IA, Anam.ai, HeyGen, Docker ou déploiement Railway. L’évaluation publique est uniquement consultative.
 
 ## Prochaine étape recommandée
 
-Ajouter les inscriptions aux formations et la progression des apprenants. Cette évolution permettra de remplacer le verrou actuel des leçons non-preview par un véritable contrôle d’accès fondé sur une inscription active, avant d’introduire exercices et quiz.
+Ajouter les inscriptions, les tentatives et la progression des apprenants. Cette évolution permettra d’enregistrer les réponses, de calculer les notes et de remplacer le verrou actuel par un contrôle fondé sur une inscription active.
