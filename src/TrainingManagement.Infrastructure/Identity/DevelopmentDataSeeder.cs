@@ -18,6 +18,7 @@ public sealed class DevelopmentDataSeeder(
         var trainer = await SeedTrainerAsync();
         var categories = await SeedCategoriesAsync();
         await SeedTrainingsAsync(categories, trainer.Id);
+        await SeedPedagogicalContentAsync();
     }
 
     private async Task<ApplicationUser> SeedTrainerAsync()
@@ -104,5 +105,118 @@ public sealed class DevelopmentDataSeeder(
             dbContext.Trainings.Add(training);
         }
         await dbContext.SaveChangesAsync();
+    }
+
+    private async Task SeedPedagogicalContentAsync()
+    {
+        var training = await dbContext.Trainings.SingleAsync(item => item.Slug == "aspnet-core-mvc-fondamentaux");
+        var introduction = await GetOrCreateModuleAsync(training, "Introduction à ASP.NET Core",
+            "introduction-aspnet-core", 1, true);
+        var firstApp = await GetOrCreateModuleAsync(training, "Première application MVC",
+            "premiere-application-mvc", 2, true);
+        await GetOrCreateModuleAsync(training, "Approfondissement",
+            "approfondissement", 3, false);
+
+        var dotnetLesson = await GetOrCreateLessonAsync(introduction,
+            "Présentation de .NET et ASP.NET Core", "presentation-dotnet-aspnet-core", 1, 15, true);
+        var architectureLesson = await GetOrCreateLessonAsync(introduction,
+            "Architecture d’une application MVC", "architecture-application-mvc", 2, 25, false);
+        var createProjectLesson = await GetOrCreateLessonAsync(firstApp,
+            "Créer un projet ASP.NET Core MVC", "creer-projet-aspnet-core-mvc", 1, 20, true);
+        await GetOrCreateLessonAsync(firstApp,
+            "Configurer son environnement", "configurer-environnement", 2, 10, false, published: false);
+
+        await SeedContentAsync(dotnetLesson, "Bienvenue", LessonContentType.Text, 1,
+            "ASP.NET Core est un framework moderne, multiplateforme et performant pour construire des applications web.", null, true);
+        await SeedContentAsync(dotnetLesson, "Découvrir ASP.NET Core", LessonContentType.Video, 2,
+            null, "https://www.youtube.com/watch?v=dQw4w9WgXcQ", true);
+        await SeedContentAsync(dotnetLesson, "Documentation officielle", LessonContentType.ExternalLink, 3,
+            null, "https://learn.microsoft.com/aspnet/core/", true);
+        await SeedContentAsync(dotnetLesson, "Guide PDF", LessonContentType.Pdf, 4,
+            null, "https://example.com/aspnet-core-guide.pdf", true);
+
+        await SeedContentAsync(architectureLesson, "Le modèle MVC", LessonContentType.Text, 1,
+            "MVC sépare les responsabilités entre le modèle, les vues et les contrôleurs.", null, true);
+        await SeedContentAsync(architectureLesson, "Ressource MVC", LessonContentType.ExternalLink, 2,
+            null, "https://learn.microsoft.com/aspnet/core/mvc/overview", true);
+        await SeedContentAsync(architectureLesson, "Note interne", LessonContentType.Text, 3,
+            "Ce bloc non publié ne doit jamais apparaître sur la page publique.", null, false);
+
+        await SeedContentAsync(createProjectLesson, "Créer le projet", LessonContentType.Text, 1,
+            "Utilisez la commande dotnet new mvc pour créer une première application MVC.", null, true);
+        await SeedContentAsync(createProjectLesson, "Démonstration vidéo", LessonContentType.Video, 2,
+            null, "https://vimeo.com/76979871", true);
+        await SeedContentAsync(createProjectLesson, "Résumé audio", LessonContentType.Audio, 3,
+            null, "https://example.com/audio/introduction.mp3", true);
+
+        await PublishSeedLessonAsync(dotnetLesson);
+        await PublishSeedLessonAsync(architectureLesson);
+        await PublishSeedLessonAsync(createProjectLesson);
+        await dbContext.SaveChangesAsync();
+    }
+
+    private async Task<TrainingModule> GetOrCreateModuleAsync(
+        Training training, string title, string slug, int order, bool published)
+    {
+        var module = await dbContext.TrainingModules
+            .Include(item => item.Training)
+            .SingleOrDefaultAsync(item => item.TrainingId == training.Id && item.Slug == slug);
+        if (module is null)
+        {
+            module = new TrainingModule
+            {
+                TrainingId = training.Id, Training = training, Title = title, Slug = slug,
+                Order = order, Description = $"Module : {title}", CreatedAt = DateTime.UtcNow
+            };
+            dbContext.TrainingModules.Add(module);
+            await dbContext.SaveChangesAsync();
+        }
+        if (published && !module.IsPublished) module.Publish(DateTime.UtcNow);
+        return module;
+    }
+
+    private async Task<Lesson> GetOrCreateLessonAsync(
+        TrainingModule module, string title, string slug, int order,
+        int duration, bool preview, bool published = true)
+    {
+        var lesson = await dbContext.Lessons
+            .Include(item => item.TrainingModule).ThenInclude(item => item.Training)
+            .Include(item => item.Contents)
+            .SingleOrDefaultAsync(item => item.TrainingModuleId == module.Id && item.Slug == slug);
+        if (lesson is null)
+        {
+            lesson = new Lesson
+            {
+                TrainingModuleId = module.Id, TrainingModule = module, Title = title, Slug = slug,
+                Summary = $"Résumé de la leçon : {title}", Order = order,
+                EstimatedDurationMinutes = duration, IsPreview = preview, CreatedAt = DateTime.UtcNow
+            };
+            dbContext.Lessons.Add(lesson);
+            await dbContext.SaveChangesAsync();
+        }
+        if (!published) lesson.IsPublished = false;
+        return lesson;
+    }
+
+    private async Task SeedContentAsync(Lesson lesson, string title, LessonContentType type,
+        int order, string? text, string? url, bool published)
+    {
+        if (await dbContext.LessonContents.AnyAsync(item => item.LessonId == lesson.Id && item.Order == order))
+            return;
+        var content = new LessonContent
+        {
+            LessonId = lesson.Id, Lesson = lesson, Title = title, ContentType = type,
+            TextContent = text, ExternalUrl = url, Order = order,
+            IsPublished = published, CreatedAt = DateTime.UtcNow
+        };
+        dbContext.LessonContents.Add(content);
+        lesson.Contents.Add(content);
+        await dbContext.SaveChangesAsync();
+    }
+
+    private static Task PublishSeedLessonAsync(Lesson lesson)
+    {
+        if (!lesson.IsPublished) lesson.Publish(DateTime.UtcNow);
+        return Task.CompletedTask;
     }
 }

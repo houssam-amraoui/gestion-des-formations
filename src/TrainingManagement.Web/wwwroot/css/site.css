@@ -48,3 +48,12 @@ a { color:var(--tm-primary); }
 .detail-placeholder { min-height:280px; border-radius:1.5rem; }
 .detail-enroll-card { top:6rem; }
 .empty-state { padding:4rem 2rem; text-align:center; border:2px dashed #dfe1eb; border-radius:1.25rem; }
+.content-preview-cell { max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lesson-block { padding:1.5rem 0; border-bottom:1px solid #e5e7ef; }
+.lesson-block iframe { border:0; border-radius:1rem; }
+.document-link { display:flex; align-items:center; gap:1.5rem; padding:1.5rem; background:var(--tm-soft); border-radius:1rem; }
+.locked-lesson { text-align:center; padding:3rem 2rem; background:var(--tm-soft); border-radius:1.25rem; }
+.lesson-nav-link { display:block; padding:.8rem 0; border-bottom:1px solid #e5e7ef; text-decoration:none; }
+.curriculum .accordion-item { border-radius:.75rem!important; overflow:hidden; margin-bottom:.75rem; border:1px solid #e4e5ee; }
+.curriculum-lesson { display:flex; justify-content:space-between; gap:1rem; padding:.85rem; border-bottom:1px solid #ececf2; text-decoration:none; color:inherit; }
+.curriculum-lesson:hover { background:var(--tm-soft); color:var(--tm-primary); }

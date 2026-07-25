@@ -1,13 +1,13 @@
 # TrainingManagement
 
-Fondations d’une plateforme de gestion des formations construite avec ASP.NET Core MVC, Razor Views, Entity Framework Core et ASP.NET Core Identity.
+Plateforme modulaire de gestion des formations construite avec .NET 10, ASP.NET Core MVC, Razor Views, Entity Framework Core et ASP.NET Core Identity.
 
 ## Prérequis
 
 - SDK .NET 10 (`dotnet --version`)
 - Git
-- Aucun serveur de base de données n’est requis en développement : SQLite est embarqué.
-- SQL Server sera requis pour l’environnement Production.
+- SQLite est embarqué pour le développement
+- SQL Server est prévu pour la production
 
 ## Démarrage rapide
 
@@ -20,23 +20,30 @@ dotnet run --project src/TrainingManagement.Web/TrainingManagement.Web.csproj --
 
 Ouvrir ensuite `http://localhost:5012`.
 
-Au premier démarrage en environnement `Development`, l’application crée la base SQLite, applique les migrations et initialise les rôles et le compte administrateur.
+Au premier démarrage en environnement `Development`, l’application crée la base SQLite, applique les migrations et exécute un seed idempotent.
 
-## Compte administrateur de développement
+## Comptes de développement
+
+Administrateur :
 
 - E-mail : `admin@training.local`
 - Mot de passe : `Admin123!`
 
-Ce compte est exclusivement destiné au développement local. Aucun mot de passe de production ne doit être ajouté au dépôt.
+Formateur :
+
+- E-mail : `trainer@training.local`
+- Mot de passe : `Trainer123!`
+
+Ces comptes sont exclusivement destinés au développement local. Aucun secret de production ne doit être ajouté au dépôt.
 
 ## Structure
 
 ```text
 TrainingManagement.sln
 src/
-├── TrainingManagement.Domain/          # Entités, constantes et règles métier autonomes
-├── TrainingManagement.Application/     # Contrats et logique applicative
-├── TrainingManagement.Infrastructure/  # EF Core, Identity, migrations et seed
+├── TrainingManagement.Domain/          # Entités, énumérations et règles métier
+├── TrainingManagement.Application/     # Contrats, modèles applicatifs et résultats de services
+├── TrainingManagement.Infrastructure/  # EF Core, Identity, migrations, services et seed
 └── TrainingManagement.Web/             # MVC, Razor, ViewModels, Areas et assets
 tests/
 └── TrainingManagement.Tests/           # Tests automatisés
@@ -46,7 +53,7 @@ Les dépendances vont vers le cœur : `Application` dépend de `Domain`, `Infras
 
 ## Base de données et migrations
 
-En développement, `appsettings.Development.json` définit :
+En développement, `appsettings.Development.json` utilise :
 
 ```json
 "ConnectionStrings": {
@@ -74,11 +81,17 @@ dotnet tool run dotnet-ef migrations list `
   --startup-project src/TrainingManagement.Web/TrainingManagement.Web.csproj
 ```
 
-En production, le fournisseur sélectionné est SQL Server. Les migrations ne sont **jamais** appliquées automatiquement : elles doivent faire partie d’une procédure de déploiement contrôlée.
+Migrations existantes :
+
+- `InitialIdentity`
+- `AddCategoriesAndTrainings`
+- `AddModulesLessonsAndContents`
+
+En production, le fournisseur sélectionné est SQL Server. Les migrations ne sont jamais appliquées automatiquement : elles doivent faire partie d’une procédure de déploiement contrôlée.
 
 ## Configuration de production
 
-Définir au minimum les variables d’environnement suivantes :
+Définir au minimum :
 
 ```text
 ASPNETCORE_ENVIRONMENT=Production
@@ -87,18 +100,138 @@ SeedAdmin__Email=<adresse administrateur>
 SeedAdmin__Password=<mot de passe fort fourni par le gestionnaire de secrets>
 SeedAdmin__FirstName=<prénom>
 SeedAdmin__LastName=<nom>
+SeedTrainer__Email=<adresse du formateur de démonstration, Development uniquement>
+SeedTrainer__Password=<mot de passe du formateur, Development uniquement>
+SeedTrainer__FirstName=<prénom>
+SeedTrainer__LastName=<nom>
 ```
 
-ASP.NET Core transforme automatiquement les doubles underscores (`__`) en séparateurs de configuration. Sur Railway, ajouter ces valeurs dans les variables du service ; ne pas les placer dans une image Docker ou dans Git.
+Sur Railway, ces valeurs devront être fournies comme variables du service et jamais placées dans Git ou dans une image Docker.
 
 ## Authentification et autorisation
 
 - Toute inscription publique crée uniquement un compte `Learner`.
 - Les rôles centralisés sont `Admin`, `Trainer` et `Learner`.
-- Les espaces `/Admin/Dashboard`, `/Trainer/Dashboard` et `/Learner/Dashboard` exigent leur rôle respectif.
+- Les espaces Admin, Trainer et Learner exigent leur rôle respectif.
 - Les mots de passe sont hachés et gérés par Identity.
-- Les formulaires POST utilisent les jetons antiforgery.
-- Après connexion, l’utilisateur est redirigé vers son Area selon son rôle.
+- Tous les formulaires POST utilisent les jetons antiforgery.
+- Après connexion, l’utilisateur est redirigé vers son espace selon son rôle.
+
+## Catégories et formations
+
+L’administration permet le CRUD des catégories, leur activation, la gestion des formations, leur association à une catégorie et à un formateur, ainsi que publication, dépublication, archivage, recherche, filtres, tri et pagination.
+
+Relations principales :
+
+- `Category` possède plusieurs `Training` avec suppression `Restrict`.
+- Une formation possède une catégorie obligatoire et active.
+- Une formation peut référencer un utilisateur actif ayant le rôle `Trainer`.
+- La suppression éventuelle d’un formateur met `TrainerId` à `null`.
+- Les slugs des catégories et formations sont normalisés et uniques.
+- Les prix utilisent une précision SQL `decimal(18,2)`.
+
+Routes :
+
+```text
+/Admin/Categories
+/Admin/Trainings
+/Trainings
+/Trainings/{slug}
+```
+
+Une formation ne peut être publiée que si son titre et sa description sont renseignés, sa catégorie est active et sa durée est strictement positive. La publication renseigne `PublishedAt` en UTC. Une formation archivée ne peut plus être modifiée ou publiée et n’apparaît jamais dans le catalogue public.
+
+## Modules, leçons et contenus pédagogiques
+
+La hiérarchie pédagogique ajoutée à l’étape 3 est :
+
+```text
+Training
+└── TrainingModule
+    └── Lesson
+        └── LessonContent
+```
+
+- Un module appartient à une formation et possède un slug unique dans cette formation.
+- Une leçon appartient à un module et possède un slug unique dans ce module.
+- Un contenu appartient à une leçon.
+- L’ordre est unique dans chaque parent et peut être modifié avec les actions Monter/Descendre.
+- Les relations utilisent `Restrict` afin d’empêcher les suppressions en cascade accidentelles.
+- Un module ou une leçon contenant des enfants ne peut pas être supprimé physiquement ; l’archivage est privilégié.
+
+### Types de contenu
+
+`LessonContentType` accepte :
+
+- `Text` : texte Razor encodé, sans interprétation HTML ;
+- `Video` : URL HTTPS, avec intégration sûre pour YouTube et Vimeo ;
+- `Audio` : URL HTTPS ;
+- `Pdf` : URL HTTPS ;
+- `ExternalLink` : URL HTTP ou HTTPS.
+
+Les schémas dangereux tels que `javascript:` ou `data:` sont rejetés côté serveur. Un contenu non publié n’est jamais visible publiquement.
+
+### Règles de publication et aperçu
+
+- Un module ne peut être publié que si sa formation n’est pas archivée.
+- Une leçon ne peut être publiée que si son module est publié, si elle contient au moins un contenu et si ses parents ne sont pas archivés.
+- Une leçon marquée `IsPreview` est accessible aux visiteurs lorsqu’elle est publiée avec son module et sa formation.
+- Une leçon non disponible en aperçu affiche : `Cette leçon est réservée aux apprenants inscrits.`
+- L’administrateur dispose d’un aperçu qui inclut les éléments non publiés avec une indication visuelle.
+- Le formateur ne voit en lecture seule que les formations qui lui sont affectées.
+
+### Routes d’administration
+
+Rôle `Admin` requis :
+
+```text
+/Admin/TrainingModules?trainingId={trainingId}
+/Admin/TrainingModules/Create?trainingId={trainingId}
+/Admin/TrainingModules/Details/{id}
+/Admin/TrainingModules/Edit/{id}
+/Admin/Lessons?moduleId={moduleId}
+/Admin/Lessons/Create?moduleId={moduleId}
+/Admin/Lessons/Details/{id}
+/Admin/Lessons/Edit/{id}
+/Admin/Lessons/Preview/{id}
+/Admin/LessonContents?lessonId={lessonId}
+/Admin/LessonContents/Create?lessonId={lessonId}
+/Admin/LessonContents/Edit/{id}
+```
+
+Les actions de publication, dépublication, archivage, suppression et changement d’ordre sont exclusivement en POST avec antiforgery.
+
+### Routes formateur
+
+Rôle `Trainer` requis, accès en lecture seule :
+
+```text
+/Trainer/Trainings
+/Trainer/Trainings/Details/{id}
+```
+
+Une tentative d’accès à une formation affectée à un autre formateur est refusée.
+
+### Routes publiques
+
+```text
+/Trainings
+/Trainings/{slug}
+/Trainings/{trainingSlug}/Modules/{moduleSlug}/Lessons/{lessonSlug}
+```
+
+Le détail public d’une formation affiche uniquement le programme publié et non archivé. Le contenu complet d’une leçon est affiché seulement si elle est publiée et disponible en aperçu ; le futur contrôle des inscriptions remplacera cette règle.
+
+## Données de démonstration
+
+Le seed `Development`, idempotent, crée :
+
+- quatre catégories ;
+- trois formations couvrant brouillon/publiée et gratuit/payant ;
+- le compte formateur et son affectation ;
+- plusieurs modules publiés et non publiés ;
+- plusieurs leçons, dont une leçon d’aperçu ;
+- des contenus texte, vidéo, audio, PDF et lien externe, publiés et non publiés.
 
 ## Tests
 
@@ -106,95 +239,12 @@ ASP.NET Core transforme automatiquement les doubles underscores (`__`) en sépar
 dotnet test TrainingManagement.sln
 ```
 
-La suite couvre les constantes de rôles, la redirection par rôle, les validations d’inscription et l’attribution automatique du rôle `Learner`.
+La suite couvre notamment Identity et les rôles, les catégories et formations, l’unicité des slugs et des ordres, les règles de publication et d’archivage, le déplacement des éléments, la validation des URL, les aperçus publics, l’isolation des formateurs, les autorisations et l’idempotence du seed.
 
-## Gestion des catégories et formations
+## Limites actuelles
 
-L’étape 2 ajoute :
-
-- le CRUD administratif des catégories avec activation, recherche et pagination ;
-- la suppression d’une catégorie uniquement lorsqu’elle n’est liée à aucune formation ;
-- la gestion des formations avec catégorie, formateur, niveau, prix et statut ;
-- les actions de publication, dépublication et archivage ;
-- la recherche, les filtres, le tri et la pagination administratifs ;
-- un catalogue public contenant uniquement les formations publiées ;
-- des pages publiques de détails sans système d’inscription à ce stade.
-
-### Entités et relations
-
-- `Category` possède plusieurs `Training`.
-- Une catégorie utilisée est protégée par une relation `Restrict`.
-- Une formation possède une catégorie obligatoire et active.
-- Une formation peut référencer un utilisateur ayant le rôle `Trainer`.
-- La suppression éventuelle d’un formateur met `TrainerId` à `null` sans supprimer ses formations.
-- Les slugs des catégories et formations sont normalisés et uniques.
-- Les prix utilisent une précision SQL `decimal(18,2)`.
-
-### Routes
-
-Administration, rôle `Admin` requis :
-
-```text
-/Admin/Categories
-/Admin/Categories/Create
-/Admin/Categories/Details/{id}
-/Admin/Categories/Edit/{id}
-/Admin/Trainings
-/Admin/Trainings/Create
-/Admin/Trainings/Details/{id}
-/Admin/Trainings/Edit/{id}
-```
-
-Catalogue public :
-
-```text
-/Trainings
-/Trainings/{slug}
-```
-
-Les changements d’état et suppressions sont exclusivement disponibles en `POST` avec validation antiforgery.
-
-### Règles de publication
-
-Une formation ne peut être publiée que si son titre et sa description sont renseignés, sa catégorie est active et sa durée est strictement positive. La publication renseigne `PublishedAt` en UTC. Une formation archivée ne peut plus être modifiée ou publiée et n’apparaît jamais dans le catalogue public.
-
-Une formation gratuite reçoit toujours un prix égal à zéro. Le formateur sélectionné est revérifié côté serveur et doit être un utilisateur actif possédant le rôle `Trainer`.
-
-### Données de démonstration
-
-En `Development`, le seed idempotent crée :
-
-- Développement Web ;
-- Développement Mobile ;
-- Intelligence Artificielle ;
-- Bases de données ;
-- trois formations couvrant les statuts brouillon/publiée et les tarifs gratuit/payant.
-
-Compte formateur :
-
-- E-mail : `trainer@training.local`
-- Mot de passe : `Trainer123!`
-
-Configuration correspondante :
-
-```text
-SeedTrainer__Email
-SeedTrainer__Password
-SeedTrainer__FirstName
-SeedTrainer__LastName
-```
-
-### Migration de l’étape 2
-
-```powershell
-dotnet tool restore
-dotnet tool run dotnet-ef database update `
-  --project src/TrainingManagement.Infrastructure/TrainingManagement.Infrastructure.csproj `
-  --startup-project src/TrainingManagement.Web/TrainingManagement.Web.csproj
-```
-
-Migration : `AddCategoriesAndTrainings`.
+Cette étape n’implémente pas les téléversements de fichiers, modules de cours avancés, exercices, quiz, examens, inscriptions, progression, paiements, avatar IA, Anam.ai, HeyGen, Docker ou déploiement Railway. Les médias pédagogiques sont référencés par URL.
 
 ## Prochaine étape recommandée
 
-La prochaine étape peut ajouter les modules et cours d’une formation, avec leur ordre, contenu et règles d’accès, sans introduire encore les quiz, inscriptions, progression ou intégrations IA.
+Ajouter les inscriptions aux formations et la progression des apprenants. Cette évolution permettra de remplacer le verrou actuel des leçons non-preview par un véritable contrôle d’accès fondé sur une inscription active, avant d’introduire exercices et quiz.

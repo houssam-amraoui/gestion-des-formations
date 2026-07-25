@@ -10,6 +10,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 {
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Training> Trainings => Set<Training>();
+    public DbSet<TrainingModule> TrainingModules => Set<TrainingModule>();
+    public DbSet<Lesson> Lessons => Set<Lesson>();
+    public DbSet<LessonContent> LessonContents => Set<LessonContent>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -50,6 +53,44 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
                 .WithMany(user => user.Trainings)
                 .HasForeignKey(training => training.TrainerId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<TrainingModule>(entity =>
+        {
+            entity.Property(module => module.Title).HasMaxLength(200).IsRequired();
+            entity.Property(module => module.Slug).HasMaxLength(220).IsRequired();
+            entity.Property(module => module.Description).HasMaxLength(1000);
+            entity.HasIndex(module => new { module.TrainingId, module.Slug }).IsUnique();
+            entity.HasIndex(module => new { module.TrainingId, module.Order }).IsUnique();
+            entity.HasOne(module => module.Training)
+                .WithMany(training => training.Modules)
+                .HasForeignKey(module => module.TrainingId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Lesson>(entity =>
+        {
+            entity.Property(lesson => lesson.Title).HasMaxLength(200).IsRequired();
+            entity.Property(lesson => lesson.Slug).HasMaxLength(220).IsRequired();
+            entity.Property(lesson => lesson.Summary).HasMaxLength(1000);
+            entity.HasIndex(lesson => new { lesson.TrainingModuleId, lesson.Slug }).IsUnique();
+            entity.HasIndex(lesson => new { lesson.TrainingModuleId, lesson.Order }).IsUnique();
+            entity.HasOne(lesson => lesson.TrainingModule)
+                .WithMany(module => module.Lessons)
+                .HasForeignKey(lesson => lesson.TrainingModuleId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<LessonContent>(entity =>
+        {
+            entity.Property(content => content.Title).HasMaxLength(200);
+            entity.Property(content => content.ExternalUrl).HasMaxLength(1000);
+            entity.Property(content => content.Description).HasMaxLength(1000);
+            entity.HasIndex(content => new { content.LessonId, content.Order }).IsUnique();
+            entity.HasOne(content => content.Lesson)
+                .WithMany(lesson => lesson.Contents)
+                .HasForeignKey(content => content.LessonId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

@@ -4,6 +4,15 @@ namespace TrainingManagement.Web.Services;
 
 public static class TrainingDisplayExtensions
 {
+    public static string ToFrenchLabel(this LessonContentType type) => type switch
+    {
+        LessonContentType.Text => "Texte",
+        LessonContentType.Video => "Vidéo",
+        LessonContentType.Audio => "Audio",
+        LessonContentType.Pdf => "Document PDF",
+        LessonContentType.ExternalLink => "Lien externe",
+        _ => type.ToString()
+    };
     public static string ToFrenchLabel(this TrainingLevel level) => level switch
     {
         TrainingLevel.Beginner => "Débutant",

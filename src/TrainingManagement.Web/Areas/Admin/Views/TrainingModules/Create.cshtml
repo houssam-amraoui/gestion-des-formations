@@ -1,0 +1,3 @@
+@model TrainingManagement.Web.ViewModels.Modules.TrainingModuleCreateViewModel
+@{ViewData["Title"]="Nouveau module";}
+<div class="container admin-page"><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-controller="Trainings" asp-action="Details" asp-route-id="@Model.TrainingId">Formation</a></li><li class="breadcrumb-item"><a asp-action="Index" asp-route-trainingId="@Model.TrainingId">Modules</a></li><li class="breadcrumb-item active">Création</li></ol></nav><h1 class="h2 fw-bold mb-4">Nouveau module</h1><form asp-action="Create" method="post"><partial name="_Form" model="Model" /></form></div>

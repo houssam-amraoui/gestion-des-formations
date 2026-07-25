@@ -1,0 +1,9 @@
+@model TrainingManagement.Application.Pedagogy.PublicLessonContent
+@switch(Model.ContentType)
+{
+    case LessonContentType.Text: <partial name="/Views/Shared/LessonContents/_Text.cshtml" model="Model" /> break;
+    case LessonContentType.Video: <partial name="/Views/Shared/LessonContents/_Video.cshtml" model="Model" /> break;
+    case LessonContentType.Audio: <partial name="/Views/Shared/LessonContents/_Audio.cshtml" model="Model" /> break;
+    case LessonContentType.Pdf: <partial name="/Views/Shared/LessonContents/_Pdf.cshtml" model="Model" /> break;
+    case LessonContentType.ExternalLink: <partial name="/Views/Shared/LessonContents/_ExternalLink.cshtml" model="Model" /> break;
+}

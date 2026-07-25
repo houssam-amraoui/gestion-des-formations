@@ -1,0 +1,2 @@
+@model TrainingManagement.Application.Pedagogy.PublicLessonContent
+<section class="lesson-block"><h2 class="h5 fw-bold">@Model.Title</h2><div class="preserve-lines">@Model.TextContent</div>@if(!string.IsNullOrWhiteSpace(Model.Description)){<p class="text-secondary mt-3">@Model.Description</p>}</section>

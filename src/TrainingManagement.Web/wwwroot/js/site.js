@@ -26,3 +26,16 @@ if (freeToggle && priceInput) {
     freeToggle.addEventListener("change", updatePrice);
     updatePrice();
 }
+
+const contentType = document.querySelector("[data-content-type]");
+const textFields = document.querySelector("[data-text-fields]");
+const urlFields = document.querySelector("[data-url-fields]");
+if (contentType && textFields && urlFields) {
+    const updateContentFields = () => {
+        const isText = contentType.value === "Text" || contentType.value === "1";
+        textFields.hidden = !isText;
+        urlFields.hidden = isText;
+    };
+    contentType.addEventListener("change", updateContentFields);
+    updateContentFields();
+}

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TrainingManagement.Application.Categories;
 using TrainingManagement.Application.Trainings;
+using TrainingManagement.Application.Pedagogy;
 using TrainingManagement.Domain.Enums;
 using TrainingManagement.Web.ViewModels.Trainings;
 
@@ -10,7 +11,8 @@ namespace TrainingManagement.Web.Controllers;
 [Route("Trainings")]
 public sealed class TrainingsController(
     ITrainingService trainingService,
-    ICategoryService categoryService) : Controller
+    ICategoryService categoryService,
+    IPedagogyReadService pedagogyService) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(string? search, int? categoryId, TrainingLevel? level, int page = 1)
@@ -29,6 +31,10 @@ public sealed class TrainingsController(
     public async Task<IActionResult> Details(string slug)
     {
         var training = await trainingService.GetPublishedBySlugAsync(slug);
-        return training is null ? NotFound() : View(new TrainingDetailsViewModel { Training = training });
+        return training is null ? NotFound() : View(new TrainingDetailsViewModel
+        {
+            Training = training,
+            Curriculum = await pedagogyService.GetPublicCurriculumAsync(training.Id)
+        });
     }
 }

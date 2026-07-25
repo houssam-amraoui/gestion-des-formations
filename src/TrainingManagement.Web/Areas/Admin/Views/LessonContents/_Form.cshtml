@@ -1,0 +1,10 @@
+@model TrainingManagement.Web.ViewModels.LessonContents.LessonContentCreateViewModel
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div><input asp-for="LessonId" type="hidden" />
+<div class="card border-0 shadow-sm mb-4"><div class="card-body p-4"><div class="row g-3">
+<div class="col-md-8"><label asp-for="Title" class="form-label"></label><input asp-for="Title" class="form-control" /><span asp-validation-for="Title" class="text-danger"></span></div>
+<div class="col-md-4"><label asp-for="ContentType" class="form-label"></label><select asp-for="ContentType" class="form-select" data-content-type>@foreach(var type in Enum.GetValues<LessonContentType>()){<option value="@type">@type.ToFrenchLabel()</option>}</select></div>
+<div class="col-12" data-text-fields><label asp-for="TextContent" class="form-label"></label><textarea asp-for="TextContent" class="form-control" rows="10" placeholder="Texte brut, encodé automatiquement à l’affichage"></textarea><span asp-validation-for="TextContent" class="text-danger"></span></div>
+<div class="col-12" data-url-fields><label asp-for="ExternalUrl" class="form-label"></label><input asp-for="ExternalUrl" class="form-control" placeholder="https://…" /><div class="form-text">HTTPS obligatoire pour vidéo, audio et PDF. Aucun code iframe n’est accepté.</div><span asp-validation-for="ExternalUrl" class="text-danger"></span></div>
+<div class="col-12"><label asp-for="Description" class="form-label"></label><textarea asp-for="Description" class="form-control" rows="3"></textarea><span asp-validation-for="Description" class="text-danger"></span></div>
+<div class="col-md-3"><label asp-for="Order" class="form-label"></label><input asp-for="Order" class="form-control" placeholder="À la fin" /><span asp-validation-for="Order" class="text-danger"></span></div>
+</div></div></div><div class="d-flex gap-2"><button class="btn btn-primary">Enregistrer</button><a class="btn btn-outline-secondary" asp-action="Index" asp-route-lessonId="@Model.LessonId">Annuler</a></div>

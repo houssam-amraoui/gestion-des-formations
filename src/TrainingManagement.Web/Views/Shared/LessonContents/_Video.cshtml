@@ -1,0 +1,5 @@
+@model TrainingManagement.Application.Pedagogy.PublicLessonContent
+@using TrainingManagement.Application.Pedagogy
+@inject IExternalMediaUrlService UrlService
+@{var embed=UrlService.GetSafeEmbedUrl(Model.ExternalUrl);}
+<section class="lesson-block"><h2 class="h5 fw-bold">@Model.Title</h2>@if(embed is not null){<div class="ratio ratio-16x9"><iframe src="@embed" title="Vidéo : @Model.Title" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>}else{<a class="btn btn-outline-primary" href="@Model.ExternalUrl" target="_blank" rel="noopener noreferrer">Ouvrir la vidéo externe</a>}@if(!string.IsNullOrWhiteSpace(Model.Description)){<p class="text-secondary mt-3">@Model.Description</p>}</section>

@@ -1,0 +1,2 @@
+@model TrainingManagement.Application.Pedagogy.PublicLessonContent
+<section class="lesson-block"><h2 class="h5 fw-bold">@Model.Title</h2><audio controls preload="metadata" class="w-100"><source src="@Model.ExternalUrl" />Votre navigateur ne prend pas en charge le lecteur audio.</audio>@if(!string.IsNullOrWhiteSpace(Model.Description)){<p class="text-secondary mt-3">@Model.Description</p>}</section>

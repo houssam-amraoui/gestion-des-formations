@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using TrainingManagement.Application.Common;
 using TrainingManagement.Application.Trainings;
 using TrainingManagement.Domain.Enums;
+using TrainingManagement.Application.Pedagogy;
 
 namespace TrainingManagement.Web.ViewModels.Trainings;
 
@@ -63,6 +64,7 @@ public sealed class TrainingEditViewModel : TrainingCreateViewModel
 public sealed class TrainingDetailsViewModel
 {
     public required TrainingDetails Training { get; init; }
+    public PublicCurriculum Curriculum { get; init; } = new([]);
 }
 
 public sealed class PublicTrainingListViewModel
