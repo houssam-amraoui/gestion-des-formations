@@ -65,6 +65,8 @@ public sealed class TrainingDetailsViewModel
 {
     public required TrainingDetails Training { get; init; }
     public PublicCurriculum Curriculum { get; init; } = new([]);
+    public bool HasEnrollmentAccess { get; init; }
+    public bool IsLearner { get; init; }
 }
 
 public sealed class PublicTrainingListViewModel

@@ -4,6 +4,30 @@ namespace TrainingManagement.Web.Services;
 
 public static class TrainingDisplayExtensions
 {
+    public static string ToFrenchLabel(this EnrollmentStatus value) => value switch
+    {
+        EnrollmentStatus.Pending => "En attente",
+        EnrollmentStatus.Active => "Active",
+        EnrollmentStatus.Completed => "Terminée",
+        EnrollmentStatus.Cancelled => "Annulée",
+        EnrollmentStatus.Suspended => "Suspendue",
+        _ => value.ToString()
+    };
+    public static string ToFrenchLabel(this LessonProgressStatus value) => value switch
+    {
+        LessonProgressStatus.NotStarted => "Non commencée",
+        LessonProgressStatus.InProgress => "En cours",
+        LessonProgressStatus.Completed => "Terminée",
+        _ => value.ToString()
+    };
+    public static string ToFrenchLabel(this AttemptStatus value) => value switch
+    {
+        AttemptStatus.InProgress => "En cours",
+        AttemptStatus.Submitted => "Soumise",
+        AttemptStatus.Expired => "Expirée",
+        AttemptStatus.Cancelled => "Annulée",
+        _ => value.ToString()
+    };
     public static string ToFrenchLabel(this AssessmentType value) => value switch
     {
         AssessmentType.Practice => "Entraînement",

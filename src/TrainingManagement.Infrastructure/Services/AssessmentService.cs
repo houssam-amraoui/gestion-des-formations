@@ -123,9 +123,21 @@ public sealed class AssessmentService(ApplicationDbContext db) : IAssessmentServ
             x.Lesson.IsPreview && x.Lesson.IsPublished && !x.Lesson.IsArchived &&
             x.Lesson.TrainingModule.IsPublished && !x.Lesson.TrainingModule.IsArchived &&
             x.Lesson.TrainingModule.Training.Status == TrainingStatus.Published)
-        .OrderBy(x => x.Order).Select(x => new PublicAssessmentCard(x.Title, x.Slug, x.AssessmentType,
+        .OrderBy(x => x.Order).Select(x => new PublicAssessmentCard(x.Id, x.Title, x.Slug, x.AssessmentType,
             x.Description, x.Questions.Count(q => q.IsPublished), x.TimeLimitMinutes, x.PassingScore))
         .ToListAsync(token).ContinueWith<IReadOnlyCollection<PublicAssessmentCard>>(x => x.Result, token);
+
+    public async Task<IReadOnlyCollection<PublicAssessmentCard>> GetAccessibleByLessonAsync(int lessonId,
+        string learnerId, CancellationToken token = default) =>
+        await db.Assessments.AsNoTracking().Where(x => x.LessonId == lessonId && x.IsPublished && !x.IsArchived &&
+            x.Lesson.IsPublished && !x.Lesson.IsArchived && x.Lesson.TrainingModule.IsPublished &&
+            !x.Lesson.TrainingModule.IsArchived &&
+            db.Enrollments.Any(e => e.LearnerId == learnerId &&
+                e.TrainingId == x.Lesson.TrainingModule.TrainingId &&
+                (e.Status == EnrollmentStatus.Active || e.Status == EnrollmentStatus.Completed)))
+            .OrderBy(x => x.Order).Select(x => new PublicAssessmentCard(x.Id, x.Title, x.Slug, x.AssessmentType,
+                x.Description, x.Questions.Count(q => q.IsPublished), x.TimeLimitMinutes, x.PassingScore))
+            .ToListAsync(token);
 
     public Task<PublicAssessmentPage?> GetPublicAsync(string trainingSlug, string moduleSlug, string lessonSlug,
         string assessmentSlug, CancellationToken token = default) =>

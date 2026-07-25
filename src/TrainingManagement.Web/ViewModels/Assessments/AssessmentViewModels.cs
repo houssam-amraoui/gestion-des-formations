@@ -24,6 +24,12 @@ public sealed class AssessmentEditViewModel : AssessmentCreateViewModel
     public int Id { get; set; }
     [Required, Range(1, int.MaxValue)] public new int? Order { get; set; }
 }
-public sealed class AssessmentDetailsViewModel { public required AssessmentDetailsModel Assessment { get; init; } }
+public sealed class AssessmentDetailsViewModel
+{
+    public required AssessmentDetailsModel Assessment { get; init; }
+    public int? InProgressAttemptId { get; init; }
+    public int? AttemptsRemaining { get; init; }
+    public bool LearnerCanStart { get; init; }
+}
 public sealed class AssessmentPreviewViewModel { public required AssessmentPreviewModel Preview { get; init; } public bool IsTrainer { get; init; } }
 public sealed class PublicAssessmentViewModel { public required PublicAssessmentPage Assessment { get; init; } }

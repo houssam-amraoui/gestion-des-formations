@@ -11,7 +11,9 @@ namespace TrainingManagement.Infrastructure.Identity;
 public sealed class DevelopmentDataSeeder(
     ApplicationDbContext dbContext,
     UserManager<ApplicationUser> userManager,
-    IOptions<SeedTrainerOptions> options)
+    RoleManager<IdentityRole> roleManager,
+    IOptions<SeedTrainerOptions> options,
+    IOptions<SeedLearnerOptions> learnerOptions)
 {
     public async Task SeedAsync()
     {
@@ -20,6 +22,7 @@ public sealed class DevelopmentDataSeeder(
         await SeedTrainingsAsync(categories, trainer.Id);
         await SeedPedagogicalContentAsync();
         await SeedAssessmentsAsync();
+        await SeedLearnerEnrollmentAsync();
     }
 
     private async Task<ApplicationUser> SeedTrainerAsync()
@@ -317,5 +320,71 @@ public sealed class DevelopmentDataSeeder(
             question.Publish(DateTime.UtcNow);
             await dbContext.SaveChangesAsync();
         }
+    }
+
+    private async Task SeedLearnerEnrollmentAsync()
+    {
+        var settings = learnerOptions.Value;
+        var learner = await userManager.FindByEmailAsync(settings.Email);
+        if (learner is null)
+        {
+            learner = new ApplicationUser
+            {
+                UserName = settings.Email, Email = settings.Email, EmailConfirmed = true,
+                FirstName = settings.FirstName, LastName = settings.LastName,
+                IsActive = true, CreatedAt = DateTime.UtcNow
+            };
+            var created = await userManager.CreateAsync(learner, settings.Password);
+            if (!created.Succeeded)
+                throw new InvalidOperationException(string.Join("; ", created.Errors.Select(x => x.Description)));
+        }
+        if (!await userManager.IsInRoleAsync(learner, AppRoles.Learner))
+        {
+            if (!await roleManager.RoleExistsAsync(AppRoles.Learner))
+                await roleManager.CreateAsync(new IdentityRole(AppRoles.Learner));
+            await userManager.AddToRoleAsync(learner, AppRoles.Learner);
+        }
+
+        var training = await dbContext.Trainings.SingleAsync(x => x.Slug == "aspnet-core-mvc-fondamentaux");
+        var enrollment = await dbContext.Enrollments.SingleOrDefaultAsync(x =>
+            x.LearnerId == learner.Id && x.TrainingId == training.Id &&
+            x.Status != EnrollmentStatus.Cancelled);
+        if (enrollment is null)
+        {
+            enrollment = new Enrollment
+            {
+                LearnerId = learner.Id, TrainingId = training.Id, Status = EnrollmentStatus.Active,
+                EnrolledAt = DateTime.UtcNow, StartedAt = DateTime.UtcNow
+            };
+            dbContext.Enrollments.Add(enrollment);
+            await dbContext.SaveChangesAsync();
+        }
+        var lessons = await dbContext.Lessons.Where(x => x.TrainingModule.TrainingId == training.Id &&
+            x.IsPublished && !x.IsArchived && x.TrainingModule.IsPublished && !x.TrainingModule.IsArchived)
+            .OrderBy(x => x.TrainingModule.Order).ThenBy(x => x.Order).Take(2).ToListAsync();
+        if (lessons.Count > 0 && !await dbContext.LessonProgresses.AnyAsync(x =>
+            x.EnrollmentId == enrollment.Id && x.LessonId == lessons[0].Id))
+            dbContext.LessonProgresses.Add(new LessonProgress
+            {
+                EnrollmentId = enrollment.Id, LessonId = lessons[0].Id,
+                Status = LessonProgressStatus.Completed, FirstAccessedAt = DateTime.UtcNow.AddDays(-2),
+                LastAccessedAt = DateTime.UtcNow.AddDays(-1), CompletedAt = DateTime.UtcNow.AddDays(-1)
+            });
+        if (lessons.Count > 1 && !await dbContext.LessonProgresses.AnyAsync(x =>
+            x.EnrollmentId == enrollment.Id && x.LessonId == lessons[1].Id))
+            dbContext.LessonProgresses.Add(new LessonProgress
+            {
+                EnrollmentId = enrollment.Id, LessonId = lessons[1].Id,
+                Status = LessonProgressStatus.InProgress, FirstAccessedAt = DateTime.UtcNow.AddHours(-2),
+                LastAccessedAt = DateTime.UtcNow.AddHours(-1)
+            });
+        await dbContext.SaveChangesAsync();
+        var total = await dbContext.Lessons.CountAsync(x => x.TrainingModule.TrainingId == training.Id &&
+            x.IsPublished && !x.IsArchived && x.TrainingModule.IsPublished && !x.TrainingModule.IsArchived);
+        var completed = await dbContext.LessonProgresses.CountAsync(x => x.EnrollmentId == enrollment.Id &&
+            x.Status == LessonProgressStatus.Completed && x.Lesson.IsPublished && !x.Lesson.IsArchived);
+        enrollment.SetProgress(total == 0 ? 0 : completed * 100m / total, DateTime.UtcNow);
+        enrollment.LastAccessedAt ??= DateTime.UtcNow.AddHours(-1);
+        await dbContext.SaveChangesAsync();
     }
 }

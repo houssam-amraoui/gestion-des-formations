@@ -34,6 +34,11 @@ Formateur :
 - E-mail : `trainer@training.local`
 - Mot de passe : `Trainer123!`
 
+Apprenant :
+
+- E-mail : `learner@training.local`
+- Mot de passe : `Learner123!`
+
 Ces comptes sont exclusivement destinés au développement local. Aucun secret de production ne doit être ajouté au dépôt.
 
 ## Structure
@@ -87,6 +92,7 @@ Migrations existantes :
 - `AddCategoriesAndTrainings`
 - `AddModulesLessonsAndContents`
 - `AddAssessmentsQuestionsAndAnswers`
+- `AddEnrollmentsAttemptsAndProgress`
 
 En production, le fournisseur sélectionné est SQL Server. Les migrations ne sont jamais appliquées automatiquement : elles doivent faire partie d’une procédure de déploiement contrôlée.
 
@@ -304,10 +310,117 @@ Migration de l’étape :
 AddAssessmentsQuestionsAndAnswers
 ```
 
-## Limites actuelles
+## Limites de l'étape 4
 
 Cette étape n’implémente pas les tentatives, réponses des apprenants, notes individuelles, inscriptions, progression, certificats, paiements, avatar IA, Anam.ai, HeyGen, Docker ou déploiement Railway. L’évaluation publique est uniquement consultative.
 
-## Prochaine étape recommandée
+## Suite prévue après l'étape 4
 
 Ajouter les inscriptions, les tentatives et la progression des apprenants. Cette évolution permettra d’enregistrer les réponses, de calculer les notes et de remplacer le verrou actuel par un contrôle fondé sur une inscription active.
+
+## Inscriptions, tentatives et progression
+
+L’étape 5 ajoute la chaîne de suivi apprenant :
+
+```text
+ApplicationUser
+├── Enrollment → Training
+│   └── LessonProgress → Lesson
+└── AssessmentAttempt → Assessment
+    └── AttemptQuestion
+        └── LearnerAnswer
+```
+
+### Inscriptions et accès
+
+- Une inscription est unique par apprenant et formation.
+- Une formation gratuite publiée peut être rejointe directement par un apprenant.
+- Une formation payante nécessite une création ou une validation par un administrateur.
+- Seules les inscriptions `Active` ou `Completed` ouvrent le contenu privé.
+- Une inscription peut passer par `Pending`, `Active`, `Suspended`, `Cancelled` et `Completed`.
+- L’annulation et la suspension retirent immédiatement l’accès sans supprimer l’historique.
+
+Routes Admin :
+
+```text
+/Admin/Enrollments
+/Admin/Enrollments/Create
+/Admin/Enrollments/Details/{id}
+/Admin/Attempts
+/Admin/Attempts/Details/{id}
+```
+
+Routes Learner :
+
+```text
+/Learner/Dashboard
+/Learner/Trainings
+/Learner/Trainings/Details/{id}
+/Learner/Lessons/Details/{id}
+/Learner/Assessments/Details/{id}
+/Learner/Attempts/Details/{id}
+/Learner/Attempts/Result/{id}
+/Learner/Attempts/History
+```
+
+Routes Trainer, en lecture seule et limitées aux formations affectées :
+
+```text
+/Trainer/LearnerProgress
+/Trainer/AssessmentResults
+/Trainer/AssessmentResults/Details/{id}
+```
+
+L’auto-inscription gratuite utilise `POST /Trainings/{id}/Enroll`.
+
+### Progression des leçons
+
+Le premier accès crée ou met à jour un `LessonProgress`. Une leçon peut être marquée terminée depuis l’espace Learner. Le pourcentage d’une inscription est recalculé à partir des leçons publiées et non archivées ; il reste compris entre 0 et 100 et termine automatiquement l’inscription à 100 %.
+
+### Tentatives et notation
+
+- Une seule tentative en cours est reprise pour un même apprenant et une même évaluation.
+- Le nombre maximal de tentatives et la limite de temps sont vérifiés côté serveur.
+- L’ordre éventuellement mélangé, les énoncés, les choix, les points et les réponses de référence sont copiés dans des snapshots immuables.
+- Les réponses peuvent être enregistrées avant soumission.
+- Une soumission est définitive et protégée contre les doubles envois.
+- Une tentative expirée est clôturée et notée avec les réponses déjà enregistrées.
+- `SingleChoice`, `MultipleChoice` et `TrueFalse` exigent une correspondance exacte.
+- `ShortAnswer` compare la réponse après normalisation des espaces et sans tenir compte de la casse.
+- Aucun crédit partiel n’est attribué dans cette version.
+- Les corrections sont visibles par l’apprenant uniquement après clôture et si l’évaluation les autorise.
+- Les résultats ne sont accessibles qu’à leur propriétaire, à un administrateur ou au formateur affecté.
+
+Les opérations sensibles utilisent des transactions et les tentatives possèdent un jeton de concurrence.
+
+### Données de démonstration
+
+Le seed Development crée de manière idempotente :
+
+- `learner@training.local` avec le rôle `Learner` ;
+- une inscription active à `ASP.NET Core MVC — Fondamentaux` ;
+- des accès et progressions de leçons pour tester le tableau de bord ;
+- les évaluations et questions de démonstration décrites à l’étape 4.
+
+Variables de configuration :
+
+```text
+SeedLearner__Email
+SeedLearner__Password
+SeedLearner__FirstName
+SeedLearner__LastName
+```
+
+Migration de l’étape :
+
+```text
+AddEnrollmentsAttemptsAndProgress
+```
+
+## Limites actuelles
+
+Cette étape ne couvre pas encore les certificats, classements, paiements, notifications, réinitialisation administrative d’une tentative, correction manuelle avancée des réponses courtes, avatar IA, Anam.ai, HeyGen, Docker ou déploiement Railway.
+
+## Prochaine étape recommandée
+
+Ajouter les certificats et les notifications, puis enrichir le suivi avec une correction manuelle des réponses courtes et des rapports exportables. Les paiements devront être traités séparément avec un fournisseur et des webhooks idempotents.

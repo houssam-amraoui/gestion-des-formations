@@ -33,6 +33,10 @@ public interface IPedagogyReadService
 {
     Task<PublicCurriculum> GetPublicCurriculumAsync(int trainingId, CancellationToken cancellationToken = default);
     Task<PublicLessonPage?> GetPublicLessonAsync(string trainingSlug, string moduleSlug, string lessonSlug, CancellationToken cancellationToken = default);
+    Task<PublicLessonPage?> GetEnrolledLessonAsync(string trainingSlug, string moduleSlug,
+        string lessonSlug, string learnerId, CancellationToken cancellationToken = default);
+    Task<PublicLessonPage?> GetEnrolledLessonByIdAsync(int lessonId, string learnerId,
+        CancellationToken cancellationToken = default);
     Task<PublicLessonPage?> GetAdminPreviewAsync(int lessonId, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<TrainerTrainingItem>> GetTrainerTrainingsAsync(string trainerId, CancellationToken cancellationToken = default);
     Task<TrainerTrainingDetails?> GetTrainerTrainingAsync(int trainingId, string trainerId, CancellationToken cancellationToken = default);

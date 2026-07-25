@@ -23,6 +23,7 @@ public sealed class Lesson
     public DateTime? UpdatedAt { get; set; }
     public ICollection<LessonContent> Contents { get; set; } = new List<LessonContent>();
     public ICollection<Assessment> Assessments { get; set; } = new List<Assessment>();
+    public ICollection<LessonProgress> ProgressRecords { get; set; } = new List<LessonProgress>();
 
     public void Publish(DateTime utcNow)
     {

@@ -30,6 +30,7 @@ public sealed class Training
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public ICollection<TrainingModule> Modules { get; set; } = new List<TrainingModule>();
+    public ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
 
     public void ApplyPricing()
     {

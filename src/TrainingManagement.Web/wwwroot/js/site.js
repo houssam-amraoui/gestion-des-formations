@@ -54,3 +54,16 @@ document.querySelectorAll("[data-question-type]").forEach(select => {
     select.addEventListener("change", refresh);
     refresh();
 });
+
+document.querySelectorAll("[data-countdown]").forEach(element => {
+    let remaining = Number(element.dataset.countdown || 0);
+    const value = element.querySelector("[data-countdown-value]");
+    const render = () => {
+        const minutes = Math.floor(Math.max(0, remaining) / 60);
+        const seconds = Math.max(0, remaining) % 60;
+        if (value) value.textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+        if (remaining > 0) remaining--;
+    };
+    render();
+    window.setInterval(render, 1000);
+});

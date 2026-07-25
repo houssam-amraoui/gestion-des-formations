@@ -14,6 +14,9 @@ using TrainingManagement.Application.Pedagogy;
 using TrainingManagement.Application.Assessments;
 using TrainingManagement.Application.Questions;
 using TrainingManagement.Application.AnswerOptions;
+using TrainingManagement.Application.Enrollments;
+using TrainingManagement.Application.Progress;
+using TrainingManagement.Application.Attempts;
 using TrainingManagement.Infrastructure.Identity;
 using TrainingManagement.Infrastructure.Persistence;
 using TrainingManagement.Infrastructure.Services;
@@ -78,9 +81,14 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IAssessmentService, AssessmentService>();
         services.AddScoped<IQuestionService, QuestionService>();
         services.AddScoped<IAnswerOptionService, AnswerOptionService>();
+        services.AddScoped<IEnrollmentService, EnrollmentService>();
+        services.AddScoped<ILessonProgressService, LessonProgressService>();
+        services.AddSingleton<IAttemptScoringService, AttemptScoringService>();
+        services.AddScoped<IAssessmentAttemptService, AssessmentAttemptService>();
         services.AddSingleton<IExternalMediaUrlService, ExternalMediaUrlService>();
         services.AddScoped<IdentityDataSeeder>();
         services.Configure<SeedTrainerOptions>(configuration.GetSection(SeedTrainerOptions.SectionName));
+        services.Configure<SeedLearnerOptions>(configuration.GetSection(SeedLearnerOptions.SectionName));
         services.AddScoped<DevelopmentDataSeeder>();
         return services;
     }

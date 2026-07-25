@@ -39,6 +39,35 @@ public sealed class PedagogyReadService(ApplicationDbContext dbContext) : IPedag
         return await MapPublicLessonAsync(lesson.Id, lesson.IsPreview, publishedOnly: true, cancellationToken);
     }
 
+    public async Task<PublicLessonPage?> GetEnrolledLessonAsync(string trainingSlug, string moduleSlug,
+        string lessonSlug, string learnerId, CancellationToken cancellationToken = default)
+    {
+        var lesson = await BaseLessonQuery().Where(item =>
+            item.TrainingModule.Training.Slug == trainingSlug &&
+            item.TrainingModule.Slug == moduleSlug && item.Slug == lessonSlug &&
+            item.TrainingModule.Training.Status == TrainingStatus.Published &&
+            item.TrainingModule.IsPublished && !item.TrainingModule.IsArchived &&
+            item.IsPublished && !item.IsArchived &&
+            dbContext.Enrollments.Any(e => e.TrainingId == item.TrainingModule.TrainingId &&
+                e.LearnerId == learnerId &&
+                (e.Status == EnrollmentStatus.Active || e.Status == EnrollmentStatus.Completed)))
+            .SingleOrDefaultAsync(cancellationToken);
+        return lesson is null ? null :
+            await MapPublicLessonAsync(lesson.Id, true, publishedOnly: true, cancellationToken);
+    }
+
+    public async Task<PublicLessonPage?> GetEnrolledLessonByIdAsync(int lessonId, string learnerId,
+        CancellationToken cancellationToken = default)
+    {
+        var allowed = await dbContext.Lessons.AsNoTracking().AnyAsync(item => item.Id == lessonId &&
+            item.IsPublished && !item.IsArchived && item.TrainingModule.IsPublished &&
+            !item.TrainingModule.IsArchived &&
+            dbContext.Enrollments.Any(e => e.TrainingId == item.TrainingModule.TrainingId &&
+                e.LearnerId == learnerId &&
+                (e.Status == EnrollmentStatus.Active || e.Status == EnrollmentStatus.Completed)), cancellationToken);
+        return allowed ? await MapPublicLessonAsync(lessonId, true, true, cancellationToken) : null;
+    }
+
     public async Task<PublicLessonPage?> GetAdminPreviewAsync(int lessonId, CancellationToken cancellationToken = default)
     {
         var exists = await dbContext.Lessons.AnyAsync(item => item.Id == lessonId, cancellationToken);

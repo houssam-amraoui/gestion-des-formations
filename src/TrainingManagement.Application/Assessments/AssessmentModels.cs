@@ -33,7 +33,7 @@ public sealed record AnswerOptionView(int Id, string Text, int Order, bool IsCor
 public sealed record AssessmentPreviewModel(AssessmentDetailsModel Assessment,
     IReadOnlyCollection<AssessmentQuestionView> Questions, bool RevealAnswers);
 
-public sealed record PublicAssessmentCard(string Title, string Slug, AssessmentType AssessmentType,
+public sealed record PublicAssessmentCard(int Id, string Title, string Slug, AssessmentType AssessmentType,
     string? Description, int QuestionCount, int? TimeLimitMinutes, decimal PassingScore);
 public sealed record PublicAnswerOptionView(int Id, string Text, int Order);
 public sealed record PublicQuestionView(int Id, QuestionType QuestionType, string Statement,
@@ -57,6 +57,8 @@ public interface IAssessmentService
     Task<ServiceResult> MoveDownAsync(int id, CancellationToken cancellationToken = default);
     Task<AssessmentPreviewModel?> GetAdminPreviewAsync(int id, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<PublicAssessmentCard>> GetPublicByLessonAsync(int lessonId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<PublicAssessmentCard>> GetAccessibleByLessonAsync(int lessonId, string learnerId,
+        CancellationToken cancellationToken = default);
     Task<PublicAssessmentPage?> GetPublicAsync(string trainingSlug, string moduleSlug, string lessonSlug,
         string assessmentSlug, CancellationToken cancellationToken = default);
     Task<AssessmentPreviewModel?> GetTrainerPreviewAsync(int id, string trainerId, CancellationToken cancellationToken = default);

@@ -23,6 +23,7 @@ public sealed class Assessment
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public ICollection<Question> Questions { get; set; } = new List<Question>();
+    public ICollection<AssessmentAttempt> Attempts { get; set; } = new List<AssessmentAttempt>();
 
     public void Publish(DateTime utcNow)
     {

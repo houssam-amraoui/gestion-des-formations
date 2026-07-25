@@ -247,6 +247,120 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
                     b.ToTable("Assessments");
                 });
 
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AssessmentAttempt", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AssessmentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AttemptNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("DurationSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("EnrollmentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("MaximumScore")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool?>("Passed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal?>("PercentageScore")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("Score")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssessmentId");
+
+                    b.HasIndex("EnrollmentId", "AssessmentId", "AttemptNumber")
+                        .IsUnique();
+
+                    b.ToTable("AssessmentAttempts");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AttemptQuestion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AnswerOptionsSnapshotJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AssessmentAttemptId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CorrectAnswerOptionIdsSnapshot")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ExpectedAnswerSnapshot")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExplanationSnapshot")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("PointsSnapshot")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("QuestionTypeSnapshot")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("StatementSnapshot")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("AssessmentAttemptId", "DisplayOrder")
+                        .IsUnique();
+
+                    b.HasIndex("AssessmentAttemptId", "QuestionId")
+                        .IsUnique();
+
+                    b.ToTable("AttemptQuestions");
+                });
+
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Category", b =>
                 {
                     b.Property<int>("Id")
@@ -289,6 +403,101 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.Enrollment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByAdminId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("EnrolledAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastAccessedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LearnerId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("ProgressPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TrainingId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByAdminId");
+
+                    b.HasIndex("TrainingId");
+
+                    b.HasIndex("LearnerId", "TrainingId");
+
+                    b.ToTable("Enrollments");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.LearnerAnswer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("AnswerOptionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AnswerTextSnapshot")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AttemptQuestionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool?>("IsCorrect")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal?>("PointsAwarded")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TextAnswer")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool?>("WasCorrectSnapshot")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnswerOptionId");
+
+                    b.HasIndex("AttemptQuestionId", "AnswerOptionId")
+                        .IsUnique();
+
+                    b.ToTable("LearnerAnswers");
                 });
 
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Lesson", b =>
@@ -391,6 +600,49 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("LessonContents");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.LessonProgress", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("EnrollmentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("FirstAccessedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastAccessedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TimeSpentSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LessonId");
+
+                    b.HasIndex("EnrollmentId", "LessonId")
+                        .IsUnique();
+
+                    b.ToTable("LessonProgresses");
                 });
 
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Question", b =>
@@ -723,6 +975,82 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
                     b.Navigation("Lesson");
                 });
 
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AssessmentAttempt", b =>
+                {
+                    b.HasOne("TrainingManagement.Domain.Entities.Assessment", "Assessment")
+                        .WithMany("Attempts")
+                        .HasForeignKey("AssessmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TrainingManagement.Domain.Entities.Enrollment", "Enrollment")
+                        .WithMany("Attempts")
+                        .HasForeignKey("EnrollmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Assessment");
+
+                    b.Navigation("Enrollment");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AttemptQuestion", b =>
+                {
+                    b.HasOne("TrainingManagement.Domain.Entities.AssessmentAttempt", "AssessmentAttempt")
+                        .WithMany("Questions")
+                        .HasForeignKey("AssessmentAttemptId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TrainingManagement.Domain.Entities.Question", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssessmentAttempt");
+
+                    b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.Enrollment", b =>
+                {
+                    b.HasOne("TrainingManagement.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TrainingManagement.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("LearnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TrainingManagement.Domain.Entities.Training", "Training")
+                        .WithMany("Enrollments")
+                        .HasForeignKey("TrainingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Training");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.LearnerAnswer", b =>
+                {
+                    b.HasOne("TrainingManagement.Domain.Entities.AnswerOption", null)
+                        .WithMany()
+                        .HasForeignKey("AnswerOptionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TrainingManagement.Domain.Entities.AttemptQuestion", "AttemptQuestion")
+                        .WithMany("Answers")
+                        .HasForeignKey("AttemptQuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AttemptQuestion");
+                });
+
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Lesson", b =>
                 {
                     b.HasOne("TrainingManagement.Domain.Entities.TrainingModule", "TrainingModule")
@@ -741,6 +1069,25 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
                         .HasForeignKey("LessonId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Lesson");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.LessonProgress", b =>
+                {
+                    b.HasOne("TrainingManagement.Domain.Entities.Enrollment", "Enrollment")
+                        .WithMany("LessonProgresses")
+                        .HasForeignKey("EnrollmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TrainingManagement.Domain.Entities.Lesson", "Lesson")
+                        .WithMany("ProgressRecords")
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Enrollment");
 
                     b.Navigation("Lesson");
                 });
@@ -785,7 +1132,19 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Assessment", b =>
                 {
+                    b.Navigation("Attempts");
+
                     b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AssessmentAttempt", b =>
+                {
+                    b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AttemptQuestion", b =>
+                {
+                    b.Navigation("Answers");
                 });
 
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Category", b =>
@@ -793,11 +1152,20 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
                     b.Navigation("Trainings");
                 });
 
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.Enrollment", b =>
+                {
+                    b.Navigation("Attempts");
+
+                    b.Navigation("LessonProgresses");
+                });
+
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Lesson", b =>
                 {
                     b.Navigation("Assessments");
 
                     b.Navigation("Contents");
+
+                    b.Navigation("ProgressRecords");
                 });
 
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Question", b =>
@@ -807,6 +1175,8 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Training", b =>
                 {
+                    b.Navigation("Enrollments");
+
                     b.Navigation("Modules");
                 });
 

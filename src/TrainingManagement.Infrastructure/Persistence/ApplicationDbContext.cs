@@ -16,6 +16,11 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<Assessment> Assessments => Set<Assessment>();
     public DbSet<Question> Questions => Set<Question>();
     public DbSet<AnswerOption> AnswerOptions => Set<AnswerOption>();
+    public DbSet<Enrollment> Enrollments => Set<Enrollment>();
+    public DbSet<LessonProgress> LessonProgresses => Set<LessonProgress>();
+    public DbSet<AssessmentAttempt> AssessmentAttempts => Set<AssessmentAttempt>();
+    public DbSet<AttemptQuestion> AttemptQuestions => Set<AttemptQuestion>();
+    public DbSet<LearnerAnswer> LearnerAnswers => Set<LearnerAnswer>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -124,6 +129,66 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
             entity.HasIndex(item => new { item.QuestionId, item.Order }).IsUnique();
             entity.HasOne(item => item.Question).WithMany(item => item.AnswerOptions)
                 .HasForeignKey(item => item.QuestionId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Enrollment>(entity =>
+        {
+            entity.Property(item => item.LearnerId).IsRequired();
+            entity.Property(item => item.ProgressPercentage).HasPrecision(5, 2);
+            entity.HasIndex(item => new { item.LearnerId, item.TrainingId });
+            entity.HasOne<ApplicationUser>().WithMany()
+                .HasForeignKey(item => item.LearnerId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<ApplicationUser>().WithMany()
+                .HasForeignKey(item => item.CreatedByAdminId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(item => item.Training).WithMany(item => item.Enrollments)
+                .HasForeignKey(item => item.TrainingId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<LessonProgress>(entity =>
+        {
+            entity.HasIndex(item => new { item.EnrollmentId, item.LessonId }).IsUnique();
+            entity.HasOne(item => item.Enrollment).WithMany(item => item.LessonProgresses)
+                .HasForeignKey(item => item.EnrollmentId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(item => item.Lesson).WithMany(item => item.ProgressRecords)
+                .HasForeignKey(item => item.LessonId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<AssessmentAttempt>(entity =>
+        {
+            entity.Property(item => item.Score).HasPrecision(10, 2);
+            entity.Property(item => item.MaximumScore).HasPrecision(10, 2);
+            entity.Property(item => item.PercentageScore).HasPrecision(5, 2);
+            entity.Property(item => item.ConcurrencyToken).IsConcurrencyToken();
+            entity.HasIndex(item => new { item.EnrollmentId, item.AssessmentId, item.AttemptNumber }).IsUnique();
+            entity.HasOne(item => item.Enrollment).WithMany(item => item.Attempts)
+                .HasForeignKey(item => item.EnrollmentId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(item => item.Assessment).WithMany(item => item.Attempts)
+                .HasForeignKey(item => item.AssessmentId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<AttemptQuestion>(entity =>
+        {
+            entity.Property(item => item.StatementSnapshot).IsRequired();
+            entity.Property(item => item.PointsSnapshot).HasPrecision(10, 2);
+            entity.Property(item => item.ExpectedAnswerSnapshot).HasMaxLength(2000);
+            entity.HasIndex(item => new { item.AssessmentAttemptId, item.DisplayOrder }).IsUnique();
+            entity.HasIndex(item => new { item.AssessmentAttemptId, item.QuestionId }).IsUnique();
+            entity.HasOne(item => item.AssessmentAttempt).WithMany(item => item.Questions)
+                .HasForeignKey(item => item.AssessmentAttemptId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(item => item.Question).WithMany()
+                .HasForeignKey(item => item.QuestionId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<LearnerAnswer>(entity =>
+        {
+            entity.Property(item => item.TextAnswer).HasMaxLength(2000);
+            entity.Property(item => item.AnswerTextSnapshot).HasMaxLength(1000);
+            entity.Property(item => item.PointsAwarded).HasPrecision(10, 2);
+            entity.HasIndex(item => new { item.AttemptQuestionId, item.AnswerOptionId }).IsUnique();
+            entity.HasOne(item => item.AttemptQuestion).WithMany(item => item.Answers)
+                .HasForeignKey(item => item.AttemptQuestionId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<AnswerOption>().WithMany()
+                .HasForeignKey(item => item.AnswerOptionId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
