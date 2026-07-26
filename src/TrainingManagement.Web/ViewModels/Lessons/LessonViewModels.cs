@@ -47,4 +47,5 @@ public sealed class LessonPageViewModel
         = Array.Empty<TrainingManagement.Application.Assessments.PublicAssessmentCard>();
     public bool IsEnrolledAccess { get; init; }
     public bool IsCompleted { get; init; }
+    public TrainingManagement.Application.AiTrainer.LessonAiAvailability? AiTrainer { get; init; }
 }

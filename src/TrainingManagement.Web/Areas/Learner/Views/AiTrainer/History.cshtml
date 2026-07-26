@@ -1,0 +1,6 @@
+@model IReadOnlyCollection<AiSessionListItem>
+@{ ViewData["Title"] = "Historique IA"; }
+<div class="container py-5"><h1 class="h2">Historique du formateur IA</h1><div class="table-responsive"><table class="table"><thead><tr><th>Formation</th><th>Leçon</th><th>Début</th><th>Statut</th><th>Messages</th><th></th></tr></thead><tbody>
+@foreach (var item in Model) { <tr><td>@item.TrainingTitle</td><td>@item.LessonTitle</td><td>@item.StartedAt.ToString("dd/MM/yyyy HH:mm") UTC</td><td>@item.Status</td><td>@item.MessageCount</td><td><a asp-action="Session" asp-route-id="@item.Id">Ouvrir</a></td></tr> }
+@if (Model.Count == 0) { <tr><td colspan="6" class="text-center py-5">Aucune session IA.</td></tr> }
+</tbody></table></div></div>

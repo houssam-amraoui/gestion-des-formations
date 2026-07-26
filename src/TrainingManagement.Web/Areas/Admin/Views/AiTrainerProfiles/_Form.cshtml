@@ -1,0 +1,24 @@
+@model AiTrainerProfileFormViewModel
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<input asp-for="Id" type="hidden" />
+<div class="row g-3">
+    <div class="col-md-4"><label asp-for="TrainingId" class="form-label"></label><input asp-for="TrainingId" class="form-control" /><span asp-validation-for="TrainingId" class="text-danger"></span></div>
+    <div class="col-md-8"><label asp-for="DisplayName" class="form-label"></label><input asp-for="DisplayName" class="form-control" /><span asp-validation-for="DisplayName" class="text-danger"></span></div>
+    <div class="col-12"><label asp-for="Description" class="form-label"></label><textarea asp-for="Description" class="form-control" rows="2"></textarea></div>
+    <div class="col-md-4"><label asp-for="Provider" class="form-label"></label><select asp-for="Provider" class="form-select"><option>Mock</option><option>Anam</option></select></div>
+    <div class="col-md-4"><label asp-for="LanguageCode" class="form-label"></label><input asp-for="LanguageCode" class="form-control" /></div>
+    <div class="col-md-4"><label asp-for="AvatarId" class="form-label"></label><input asp-for="AvatarId" class="form-control" autocomplete="off" /></div>
+    <div class="col-md-4"><label asp-for="VoiceId" class="form-label"></label><input asp-for="VoiceId" class="form-control" autocomplete="off" /></div>
+    <div class="col-md-4"><label asp-for="MaximumMessagesPerSession" class="form-label"></label><input asp-for="MaximumMessagesPerSession" class="form-control" /></div>
+    <div class="col-md-4"><label asp-for="MaximumSessionMinutes" class="form-label"></label><input asp-for="MaximumSessionMinutes" class="form-control" /></div>
+    <div class="col-12"><label asp-for="WelcomeMessage" class="form-label"></label><textarea asp-for="WelcomeMessage" class="form-control" rows="2"></textarea></div>
+    <div class="col-12"><label asp-for="FallbackMessage" class="form-label"></label><textarea asp-for="FallbackMessage" class="form-control" rows="2"></textarea></div>
+    <div class="col-12"><label asp-for="SystemPrompt" class="form-label"></label><textarea asp-for="SystemPrompt" class="form-control" rows="5"></textarea><div class="form-text">Ce texte n’est jamais affiché intégralement aux apprenants.</div></div>
+    <div class="col-12 d-flex flex-wrap gap-3">
+        <div class="form-check"><input asp-for="IsEnabled" class="form-check-input" /><label asp-for="IsEnabled" class="form-check-label"></label></div>
+        <div class="form-check"><input asp-for="AllowTextInput" class="form-check-input" /><label asp-for="AllowTextInput" class="form-check-label"></label></div>
+        <div class="form-check"><input asp-for="AllowAudioInput" class="form-check-input" /><label asp-for="AllowAudioInput" class="form-check-label"></label></div>
+        <div class="form-check"><input asp-for="AllowAudioOutput" class="form-check-input" /><label asp-for="AllowAudioOutput" class="form-check-label"></label></div>
+        <div class="form-check"><input asp-for="AllowAvatar" class="form-check-input" /><label asp-for="AllowAvatar" class="form-check-label"></label></div>
+    </div>
+</div>

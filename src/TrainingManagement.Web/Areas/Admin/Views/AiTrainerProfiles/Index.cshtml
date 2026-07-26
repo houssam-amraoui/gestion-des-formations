@@ -1,0 +1,19 @@
+@model IReadOnlyCollection<AiTrainerProfileListItem>
+@{ ViewData["Title"] = "Formateurs IA"; }
+<div class="container py-5">
+    <nav><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-controller="Dashboard">Administration</a></li><li class="breadcrumb-item active">Formateurs IA</li></ol></nav>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div><h1 class="h2 fw-bold mb-1">Profils de formateur IA</h1><p class="text-secondary mb-0">Configuration par formation, sans exposition des clés fournisseur.</p></div>
+        <a class="btn btn-primary" asp-action="Create">Nouveau profil</a>
+    </div>
+    <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Formation</th><th>Nom</th><th>Fournisseur</th><th>Langue</th><th>Configuration</th><th>Statut</th><th></th></tr></thead><tbody>
+    @foreach (var item in Model)
+    {
+        <tr><td>@item.TrainingTitle</td><td>@item.DisplayName</td><td><span class="badge text-bg-info">@item.Provider</span></td><td>@item.LanguageCode</td>
+            <td><span class="badge text-bg-@(item.ProviderConfigured ? "success" : "warning")">@(item.ProviderConfigured ? "Fournisseur configuré" : "Clé API manquante")</span></td>
+            <td><span class="badge text-bg-@(item.IsEnabled ? "success" : "secondary")">@(item.IsEnabled ? "Actif" : "Désactivé")</span></td>
+            <td><a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@item.Id">Détails</a></td></tr>
+    }
+    @if (Model.Count == 0) { <tr><td colspan="7" class="text-center py-5">Aucun profil IA.</td></tr> }
+    </tbody></table></div>
+</div>

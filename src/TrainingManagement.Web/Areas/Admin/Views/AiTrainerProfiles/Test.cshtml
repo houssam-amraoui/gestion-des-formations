@@ -1,0 +1,8 @@
+@model AiProfileTestViewModel
+@{ ViewData["Title"] = "Tester le formateur IA"; }
+<div class="container py-5"><a asp-action="Details" asp-route-id="@Model.Profile.Id">← Profil</a><h1 class="h2 mt-2">Tester @Model.Profile.DisplayName</h1>
+<div class="alert alert-info">Mode de test Admin. Utilisez l’identifiant d’une leçon appartenant à @Model.Profile.TrainingTitle.</div>
+<form method="post" class="card card-body border-0 shadow-sm"><div asp-validation-summary="All" class="text-danger"></div>
+<div class="mb-3"><label asp-for="LessonId" class="form-label"></label><input asp-for="LessonId" class="form-control" /></div>
+<div class="mb-3"><label asp-for="Question" class="form-label"></label><textarea asp-for="Question" class="form-control"></textarea></div>
+<button class="btn btn-primary">Démarrer le test</button></form></div>

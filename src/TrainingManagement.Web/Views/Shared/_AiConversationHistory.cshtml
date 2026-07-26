@@ -1,0 +1,23 @@
+@model AiSessionModel
+<div class="ai-conversation border rounded-3 p-3 bg-body-tertiary overflow-auto" style="max-height:520px"
+     aria-live="polite" aria-label="Historique de conversation">
+    @if (Model.Messages.Count == 0)
+    {
+        <p class="text-secondary text-center">Aucun message.</p>
+    }
+    @foreach (var message in Model.Messages)
+    {
+        var assistant = message.Role == AiMessageRole.Assistant;
+        <article class="d-flex mb-3 @(assistant ? "" : "justify-content-end")">
+            <div class="p-3 rounded-3 @(assistant ? "bg-white border" : "bg-primary text-white")"
+                 style="max-width:85%">
+                <div class="small fw-semibold mb-1">@(assistant ? Model.TrainerDisplayName : "Vous")</div>
+                <div class="ai-message-text">@message.Text</div>
+                <small class="@(assistant ? "text-secondary" : "text-white-50")">
+                    @message.CreatedAt.ToString("HH:mm") UTC
+                    @if (assistant) { <span> · Réponse générée par intelligence artificielle</span> }
+                </small>
+            </div>
+        </article>
+    }
+</div>

@@ -1,0 +1,26 @@
+@model AiSessionModel
+<section class="card border-0 shadow-sm ai-avatar-panel" aria-label="Panneau avatar">
+    <div class="card-body text-center p-4">
+        <div class="rounded-circle bg-primary-subtle d-inline-flex align-items-center justify-content-center mb-3"
+             style="width:96px;height:96px;font-size:2.5rem" aria-hidden="true">🤖</div>
+        <h2 class="h5">@Model.TrainerDisplayName</h2>
+        @if (Model.AllowAvatar && Model.AvatarStatus is "ready" or "presenting" or "simulated")
+        {
+            <span class="badge text-bg-success">Avatar interactif disponible</span>
+        }
+        else if (Model.AllowAudioOutput)
+        {
+            <span class="badge text-bg-info">Mode audio disponible</span>
+        }
+        else
+        {
+            <span class="badge text-bg-secondary">Mode texte</span>
+        }
+        @if (Model.AllowAvatar && Model.AvatarStatus is "unavailable")
+        {
+            <p class="alert alert-warning small mt-3 mb-0">
+                L’avatar est temporairement indisponible. Vous pouvez continuer la conversation en texte ou en audio.
+            </p>
+        }
+    </div>
+</section>

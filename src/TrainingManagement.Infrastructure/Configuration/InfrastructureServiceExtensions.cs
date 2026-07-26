@@ -25,6 +25,8 @@ using TrainingManagement.Application.Certificates;
 using TrainingManagement.Application.Analytics;
 using TrainingManagement.Application.Exports;
 using TrainingManagement.Infrastructure.Certificates;
+using TrainingManagement.Application.AiTrainer;
+using TrainingManagement.Infrastructure.AiTrainer;
 
 namespace TrainingManagement.Infrastructure.Configuration;
 
@@ -97,12 +99,63 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<ICertificateStorageService, LocalCertificateStorageService>();
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddScoped<ICsvExportService, CsvExportService>();
+        services.AddScoped<IAiTrainerProfileService, AiTrainerProfileService>();
+        services.AddScoped<IAiConversationService, AiConversationService>();
+        services.AddScoped<ILessonContextService, LessonContextService>();
+        services.AddScoped<IAiContentModerationService, AiContentModerationService>();
+        services.AddScoped<IAiConsentService, AiConsentService>();
+        services.AddScoped<IAiUsageService, AiUsageService>();
+        services.AddSingleton<MockAiProvider>();
+        services.AddSingleton<IAiProvider>(sp => sp.GetRequiredService<MockAiProvider>());
+        if (environment.IsDevelopment())
+        {
+            services.AddSingleton<IAiAvatarProvider>(sp => sp.GetRequiredService<MockAiProvider>());
+            services.AddSingleton<IAiLanguageModelProvider>(sp => sp.GetRequiredService<MockAiProvider>());
+            services.AddSingleton<IAiSpeechToTextProvider>(sp => sp.GetRequiredService<MockAiProvider>());
+            services.AddSingleton<IAiTextToSpeechProvider>(sp => sp.GetRequiredService<MockAiProvider>());
+        }
+        else
+        {
+            services.AddSingleton<UnavailableSpeechProvider>();
+            services.AddSingleton<IAiSpeechToTextProvider>(sp =>
+                sp.GetRequiredService<UnavailableSpeechProvider>());
+            services.AddSingleton<IAiTextToSpeechProvider>(sp =>
+                sp.GetRequiredService<UnavailableSpeechProvider>());
+        }
+        services.AddHttpClient<AnamAiProvider>((sp, client) =>
+        {
+            var settings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<AnamOptions>>().Value;
+            client.BaseAddress = new Uri(settings.BaseAddress);
+            client.Timeout = TimeSpan.FromSeconds(
+                sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<AiTrainerOptions>>()
+                    .Value.RequestTimeoutSeconds);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("TrainingManagement/1.0");
+        });
+        services.AddTransient<IAiProvider>(sp => sp.GetRequiredService<AnamAiProvider>());
+        services.AddTransient<IAiAvatarProvider>(sp => sp.GetRequiredService<AnamAiProvider>());
+        services.AddScoped<IAiProviderFactory, AiProviderFactory>();
         services.AddSingleton<IExternalMediaUrlService, ExternalMediaUrlService>();
         services.AddScoped<IdentityDataSeeder>();
         services.Configure<SeedTrainerOptions>(configuration.GetSection(SeedTrainerOptions.SectionName));
         services.Configure<SeedLearnerOptions>(configuration.GetSection(SeedLearnerOptions.SectionName));
         services.AddOptions<ApplicationOptions>().Bind(configuration.GetSection(ApplicationOptions.SectionName))
             .ValidateDataAnnotations().ValidateOnStart();
+        services.AddOptions<AiTrainerOptions>().Bind(configuration.GetSection(AiTrainerOptions.SectionName))
+            .ValidateDataAnnotations()
+            .Validate(value => !value.Enabled || environment.IsDevelopment() ||
+                (!value.Provider.Equals("Mock", StringComparison.OrdinalIgnoreCase) &&
+                 !value.LanguageModelProvider.Equals("Mock", StringComparison.OrdinalIgnoreCase) &&
+                 !value.AvatarProvider.Equals("Mock", StringComparison.OrdinalIgnoreCase) &&
+                 !value.SpeechToTextProvider.Equals("Mock", StringComparison.OrdinalIgnoreCase) &&
+                 !value.TextToSpeechProvider.Equals("Mock", StringComparison.OrdinalIgnoreCase)),
+                "Le fournisseur Mock est interdit en Production.")
+            .ValidateOnStart();
+        services.AddOptions<AnamOptions>().Bind(configuration.GetSection(AnamOptions.SectionName))
+            .ValidateDataAnnotations().ValidateOnStart();
+        services.Configure<ExternalAiProviderOptions>("HeyGen", configuration.GetSection("HeyGen"));
+        services.Configure<ExternalAiProviderOptions>("LanguageModel", configuration.GetSection("LanguageModel"));
+        services.Configure<ExternalAiProviderOptions>("SpeechToText", configuration.GetSection("SpeechToText"));
+        services.Configure<ExternalAiProviderOptions>("TextToSpeech", configuration.GetSection("TextToSpeech"));
         services.AddOptions<CertificateStorageOptions>().Bind(configuration.GetSection(CertificateStorageOptions.SectionName))
             .ValidateDataAnnotations().ValidateOnStart();
         services.AddScoped<DevelopmentDataSeeder>();

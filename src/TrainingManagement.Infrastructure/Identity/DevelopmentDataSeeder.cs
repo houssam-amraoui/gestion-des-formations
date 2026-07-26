@@ -26,6 +26,7 @@ public sealed class DevelopmentDataSeeder(
         await SeedTrainingsAsync(categories, trainer.Id);
         await SeedPedagogicalContentAsync();
         await SeedAssessmentsAsync();
+        await SeedAiTrainerProfileAsync();
         await SeedLearnerEnrollmentAsync();
     }
 
@@ -430,5 +431,36 @@ public sealed class DevelopmentDataSeeder(
         await dbContext.SaveChangesAsync();
         await completionService.FinalizeAsync(enrollment.Id);
         await certificateService.GenerateAsync(enrollment.Id);
+    }
+
+    private async Task SeedAiTrainerProfileAsync()
+    {
+        var training = await dbContext.Trainings
+            .SingleAsync(x => x.Slug == "aspnet-core-mvc-fondamentaux");
+        var profile = await dbContext.AiTrainerProfiles
+            .SingleOrDefaultAsync(x => x.TrainingId == training.Id);
+        if (profile is not null)
+            return;
+
+        dbContext.AiTrainerProfiles.Add(new AiTrainerProfile
+        {
+            TrainingId = training.Id,
+            DisplayName = "Coach ASP.NET Core",
+            Description = "Un assistant pédagogique de démonstration pour réviser les notions de la formation.",
+            Provider = "Mock",
+            LanguageCode = "fr-FR",
+            SystemPrompt = "Tu es un formateur bienveillant spécialisé en ASP.NET Core MVC. Réponds uniquement à partir du contexte pédagogique fourni. Si l’information manque, indique-le clairement.",
+            WelcomeMessage = "Bonjour ! Je suis votre coach ASP.NET Core. Posez-moi une question sur cette leçon.",
+            FallbackMessage = "Je n’ai pas trouvé cette information dans le contenu de la leçon. Reformulez votre question ou consultez les ressources du cours.",
+            IsEnabled = true,
+            AllowTextInput = true,
+            AllowAudioInput = true,
+            AllowAudioOutput = false,
+            AllowAvatar = false,
+            MaximumMessagesPerSession = 20,
+            MaximumSessionMinutes = 30,
+            CreatedAt = DateTime.UtcNow
+        });
+        await dbContext.SaveChangesAsync();
     }
 }

@@ -22,6 +22,11 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<AttemptQuestion> AttemptQuestions => Set<AttemptQuestion>();
     public DbSet<LearnerAnswer> LearnerAnswers => Set<LearnerAnswer>();
     public DbSet<Certificate> Certificates => Set<Certificate>();
+    public DbSet<AiTrainerProfile> AiTrainerProfiles => Set<AiTrainerProfile>();
+    public DbSet<AiConversationSession> AiConversationSessions => Set<AiConversationSession>();
+    public DbSet<AiConversationMessage> AiConversationMessages => Set<AiConversationMessage>();
+    public DbSet<AiProviderUsageRecord> AiProviderUsageRecords => Set<AiProviderUsageRecord>();
+    public DbSet<AiUserConsent> AiUserConsents => Set<AiUserConsent>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -212,6 +217,78 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
                 .HasForeignKey<Certificate>(item => item.EnrollmentId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<ApplicationUser>().WithMany()
                 .HasForeignKey(item => item.RevokedByAdminId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<AiTrainerProfile>(entity =>
+        {
+            entity.Property(x => x.DisplayName).HasMaxLength(150).IsRequired();
+            entity.Property(x => x.Description).HasMaxLength(1000);
+            entity.Property(x => x.Provider).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.AvatarId).HasMaxLength(250);
+            entity.Property(x => x.VoiceId).HasMaxLength(250);
+            entity.Property(x => x.LanguageCode).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.SystemPrompt).HasMaxLength(10000);
+            entity.Property(x => x.WelcomeMessage).HasMaxLength(2000);
+            entity.Property(x => x.FallbackMessage).HasMaxLength(1000);
+            entity.HasIndex(x => x.TrainingId).IsUnique();
+            entity.HasOne(x => x.Training).WithOne(x => x.AiTrainerProfile)
+                .HasForeignKey<AiTrainerProfile>(x => x.TrainingId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<AiConversationSession>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.UserId).IsRequired();
+            entity.Property(x => x.ProviderSessionId).HasMaxLength(500);
+            entity.Property(x => x.EstimatedCost).HasPrecision(18, 6);
+            entity.Property(x => x.FailureReason).HasMaxLength(2000);
+            entity.HasIndex(x => new { x.UserId, x.StartedAt });
+            entity.HasIndex(x => x.LessonId);
+            entity.HasIndex(x => x.Status);
+            entity.HasIndex(x => new { x.UserId, x.LessonId }).IsUnique()
+                .HasFilter("[Status] = 1");
+            entity.HasOne(x => x.AiTrainerProfile).WithMany(x => x.Sessions)
+                .HasForeignKey(x => x.AiTrainerProfileId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Lesson).WithMany(x => x.AiConversationSessions)
+                .HasForeignKey(x => x.LessonId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Enrollment).WithMany(x => x.AiConversationSessions)
+                .HasForeignKey(x => x.EnrollmentId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<ApplicationUser>().WithMany()
+                .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<AiConversationMessage>(entity =>
+        {
+            entity.Property(x => x.TextContent).IsRequired();
+            entity.Property(x => x.AudioStoragePath).HasMaxLength(500);
+            entity.Property(x => x.ProviderMessageId).HasMaxLength(500);
+            entity.Property(x => x.ModerationReason).HasMaxLength(1000);
+            entity.HasIndex(x => new { x.AiConversationSessionId, x.SequenceNumber }).IsUnique();
+            entity.HasOne(x => x.AiConversationSession).WithMany(x => x.Messages)
+                .HasForeignKey(x => x.AiConversationSessionId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<AiProviderUsageRecord>(entity =>
+        {
+            entity.Property(x => x.Provider).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.Operation).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.EstimatedCost).HasPrecision(18, 6);
+            entity.Property(x => x.ErrorCode).HasMaxLength(200);
+            entity.HasIndex(x => new { x.Provider, x.CreatedAt });
+            entity.HasIndex(x => x.SessionId);
+            entity.HasOne(x => x.Session).WithMany(x => x.UsageRecords)
+                .HasForeignKey(x => x.SessionId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<AiUserConsent>(entity =>
+        {
+            entity.Property(x => x.UserId).IsRequired();
+            entity.Property(x => x.ConsentType).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.Provider).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.PolicyVersion).HasMaxLength(50).IsRequired();
+            entity.HasIndex(x => new { x.UserId, x.ConsentType, x.Provider, x.PolicyVersion });
+            entity.HasOne<ApplicationUser>().WithMany()
+                .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

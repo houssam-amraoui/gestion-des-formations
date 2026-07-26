@@ -145,6 +145,309 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AiConversationMessage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("AiConversationSessionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("AudioDurationSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AudioStoragePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsModerated")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ModerationReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderMessageId")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SequenceNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TextContent")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("TokenCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TranscriptionText")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AiConversationSessionId", "SequenceNumber")
+                        .IsUnique();
+
+                    b.ToTable("AiConversationMessages");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AiConversationSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AiTrainerProfileId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("EnrollmentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal?>("EstimatedCost")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("InputAudioSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LastActivityAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MessageCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("OutputAudioSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ProviderSessionId")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AiTrainerProfileId");
+
+                    b.HasIndex("EnrollmentId");
+
+                    b.HasIndex("LessonId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UserId", "LessonId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 1");
+
+                    b.HasIndex("UserId", "StartedAt");
+
+                    b.ToTable("AiConversationSessions");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AiProviderUsageRecord", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("AudioSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("EstimatedCost")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("InputUnits")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Operation")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("OutputUnits")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Succeeded")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("Provider", "CreatedAt");
+
+                    b.ToTable("AiProviderUsageRecords");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AiTrainerProfile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AllowAudioInput")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AllowAudioOutput")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AllowAvatar")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AllowTextInput")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AvatarId")
+                        .HasMaxLength(250)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FallbackMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LanguageCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MaximumMessagesPerSession")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MaximumSessionMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SystemPrompt")
+                        .HasMaxLength(10000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TrainingId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("VoiceId")
+                        .HasMaxLength(250)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WelcomeMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TrainingId")
+                        .IsUnique();
+
+                    b.ToTable("AiTrainerProfiles");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AiUserConsent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("AcceptedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConsentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PolicyVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "ConsentType", "Provider", "PolicyVersion");
+
+                    b.ToTable("AiUserConsents");
+                });
+
             modelBuilder.Entity("TrainingManagement.Domain.Entities.AnswerOption", b =>
                 {
                     b.Property<int>("Id")
@@ -1064,6 +1367,80 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AiConversationMessage", b =>
+                {
+                    b.HasOne("TrainingManagement.Domain.Entities.AiConversationSession", "AiConversationSession")
+                        .WithMany("Messages")
+                        .HasForeignKey("AiConversationSessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AiConversationSession");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AiConversationSession", b =>
+                {
+                    b.HasOne("TrainingManagement.Domain.Entities.AiTrainerProfile", "AiTrainerProfile")
+                        .WithMany("Sessions")
+                        .HasForeignKey("AiTrainerProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TrainingManagement.Domain.Entities.Enrollment", "Enrollment")
+                        .WithMany("AiConversationSessions")
+                        .HasForeignKey("EnrollmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TrainingManagement.Domain.Entities.Lesson", "Lesson")
+                        .WithMany("AiConversationSessions")
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TrainingManagement.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AiTrainerProfile");
+
+                    b.Navigation("Enrollment");
+
+                    b.Navigation("Lesson");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AiProviderUsageRecord", b =>
+                {
+                    b.HasOne("TrainingManagement.Domain.Entities.AiConversationSession", "Session")
+                        .WithMany("UsageRecords")
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Session");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AiTrainerProfile", b =>
+                {
+                    b.HasOne("TrainingManagement.Domain.Entities.Training", "Training")
+                        .WithOne("AiTrainerProfile")
+                        .HasForeignKey("TrainingManagement.Domain.Entities.AiTrainerProfile", "TrainingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Training");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AiUserConsent", b =>
+                {
+                    b.HasOne("TrainingManagement.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TrainingManagement.Domain.Entities.AnswerOption", b =>
                 {
                     b.HasOne("TrainingManagement.Domain.Entities.Question", "Question")
@@ -1257,6 +1634,18 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
                     b.Navigation("Training");
                 });
 
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AiConversationSession", b =>
+                {
+                    b.Navigation("Messages");
+
+                    b.Navigation("UsageRecords");
+                });
+
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.AiTrainerProfile", b =>
+                {
+                    b.Navigation("Sessions");
+                });
+
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Assessment", b =>
                 {
                     b.Navigation("Attempts");
@@ -1281,6 +1670,8 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Enrollment", b =>
                 {
+                    b.Navigation("AiConversationSessions");
+
                     b.Navigation("Attempts");
 
                     b.Navigation("Certificate");
@@ -1290,6 +1681,8 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Lesson", b =>
                 {
+                    b.Navigation("AiConversationSessions");
+
                     b.Navigation("Assessments");
 
                     b.Navigation("Contents");
@@ -1304,6 +1697,8 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Training", b =>
                 {
+                    b.Navigation("AiTrainerProfile");
+
                     b.Navigation("Enrollments");
 
                     b.Navigation("Modules");

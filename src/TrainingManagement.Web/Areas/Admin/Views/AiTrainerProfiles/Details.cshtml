@@ -1,0 +1,13 @@
+@model AiTrainerProfileDetails
+@{ ViewData["Title"] = "Profil IA"; }
+<div class="container py-5"><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-action="Index">Formateurs IA</a></li><li class="breadcrumb-item active">@Model.DisplayName</li></ol></nav>
+<div class="d-flex justify-content-between"><div><h1 class="h2">@Model.DisplayName</h1><p class="text-secondary">@Model.TrainingTitle</p></div><div><a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Id">Modifier</a> <a class="btn btn-outline-primary" asp-action="Test" asp-route-id="@Model.Id">Tester</a></div></div>
+<div class="card border-0 shadow-sm"><div class="card-body"><dl class="row mb-0">
+<dt class="col-sm-4">Fournisseur</dt><dd class="col-sm-8">@Model.Provider — @(Model.ProviderConfigured ? "Fournisseur configuré" : "Clé API manquante")</dd>
+<dt class="col-sm-4">Langue</dt><dd class="col-sm-8">@Model.LanguageCode</dd>
+<dt class="col-sm-4">Prompt</dt><dd class="col-sm-8">@Model.SystemPromptSummary</dd>
+<dt class="col-sm-4">Limites</dt><dd class="col-sm-8">@Model.MaximumMessagesPerSession messages · @Model.MaximumSessionMinutes minutes</dd>
+<dt class="col-sm-4">Modes</dt><dd class="col-sm-8">Texte @Model.AllowTextInput · Audio entrant @Model.AllowAudioInput · Audio sortant @Model.AllowAudioOutput · Avatar @Model.AllowAvatar</dd>
+</dl></div></div>
+<form method="post" asp-action="@(Model.IsEnabled ? "Disable" : "Enable")" asp-route-id="@Model.Id" class="mt-3"><button class="btn btn-@(Model.IsEnabled ? "warning" : "success")" data-confirm="Confirmer ce changement ?">@(Model.IsEnabled ? "Désactiver" : "Activer")</button></form>
+</div>

@@ -24,6 +24,7 @@ public sealed class Lesson
     public ICollection<LessonContent> Contents { get; set; } = new List<LessonContent>();
     public ICollection<Assessment> Assessments { get; set; } = new List<Assessment>();
     public ICollection<LessonProgress> ProgressRecords { get; set; } = new List<LessonProgress>();
+    public ICollection<AiConversationSession> AiConversationSessions { get; set; } = new List<AiConversationSession>();
 
     public void Publish(DateTime utcNow)
     {

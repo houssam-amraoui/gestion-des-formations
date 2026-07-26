@@ -7,12 +7,14 @@ using TrainingManagement.Application.Progress;
 using TrainingManagement.Domain.Constants;
 using TrainingManagement.Infrastructure.Identity;
 using TrainingManagement.Web.ViewModels.Lessons;
+using TrainingManagement.Application.AiTrainer;
 
 namespace TrainingManagement.Web.Areas.Learner.Controllers;
 
 [Area("Learner"), Authorize(Roles = AppRoles.Learner)]
 public sealed class LessonsController(IPedagogyReadService pedagogy, IAssessmentService assessments,
-    ILessonProgressService progress, UserManager<ApplicationUser> users) : Controller
+    ILessonProgressService progress, IAiTrainerProfileService aiProfiles,
+    UserManager<ApplicationUser> users) : Controller
 {
     public async Task<IActionResult> Details(int id,CancellationToken token)
     {
@@ -20,7 +22,8 @@ public sealed class LessonsController(IPedagogyReadService pedagogy, IAssessment
         var lesson=await pedagogy.GetEnrolledLessonByIdAsync(id,user,token);if(lesson is null)return Forbid();
         await progress.RecordAccessAsync(id,user,token);
         return View(new LessonPageViewModel{Lesson=lesson,IsEnrolledAccess=true,
-            Assessments=await assessments.GetAccessibleByLessonAsync(id,user,token)});
+            Assessments=await assessments.GetAccessibleByLessonAsync(id,user,token),
+            AiTrainer=await aiProfiles.GetAvailabilityAsync(id,user,false,false,token)});
     }
     [HttpPost,ValidateAntiForgeryToken]
     public async Task<IActionResult> Complete(int id,CancellationToken token)

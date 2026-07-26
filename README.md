@@ -608,3 +608,155 @@ volume actuel ; des agrégats persistés pourront être ajoutés à grande éche
 La prochaine étape recommandée est d’ajouter les notifications et l’envoi contrôlé des certificats,
 puis d’introduire un stockage objet privé et des tâches en arrière-plan. Les paiements et
 intégrations IA doivent rester des modules séparés.
+
+## Formateur IA conversationnel
+
+L’étape 7 ajoute un module de tutorat lié aux leçons, conçu autour d’abstractions indépendantes des
+fournisseurs. Le mode `Mock`, activé uniquement en Development, fonctionne sans réseau et fournit
+des réponses déterministes pour développer et tester le parcours complet. Un adaptateur Anam limité
+à la création sécurisée d’un jeton de session avatar est également présent ; sa clé reste côté
+serveur et n’est jamais enregistrée en base, journalisée ou rendue dans une vue.
+
+La chaîne fonctionnelle est :
+
+```text
+Training → AiTrainerProfile
+Lesson + Enrollment + ApplicationUser → AiConversationSession
+AiConversationSession → AiConversationMessage
+AiConversationSession → AiProviderUsageRecord
+ApplicationUser → AiUserConsent
+```
+
+Un seul profil IA est autorisé par formation. Une session conserve un identifiant `Guid`, une durée
+et un nombre de messages bornés, un statut (`Starting`, `Active`, `Completed`, `Expired`, `Failed`
+ou `Cancelled`) et un historique ordonné. Les lectures utilisent des projections sans suivi et les
+relations vers les données pédagogiques sont restrictives ; seuls les messages et métriques
+techniques appartenant à une session suivent sa suppression.
+
+### Sécurité et confidentialité
+
+- l’apprenant doit avoir une inscription active ou terminée pour une leçon privée ;
+- le formateur est limité aux formations qui lui sont affectées ;
+- les routes Admin, Trainer et Learner exigent leurs rôles respectifs ;
+- toutes les mutations utilisent POST et antiforgery ;
+- les démarrages, messages, audios et actualisations ont des politiques de rate limiting dédiées ;
+- le texte est limité, les demandes de secrets et injections de prompt évidentes sont bloquées ;
+- le contexte de leçon est délimité comme source non fiable et tronqué à une taille configurable ;
+- les audios acceptés sont WebM, WAV ou MP3, avec taille maximale contrôlée ;
+- un consentement versionné et révocable est requis avant tout traitement audio Learner ;
+- aucun fichier audio temporaire n’est créé : le flux est transmis directement au fournisseur ;
+- l’historique peut être anonymisé après la durée de conservation configurée ;
+- les erreurs externes sont transformées en messages sûrs, sans exposer de clé ni réponse brute.
+
+Le mode texte reste disponible si l’avatar ou la synthèse vocale échoue. En Production, l’IA est
+désactivée par défaut et une validation de configuration interdit d’activer silencieusement le
+fournisseur `Mock`.
+
+### Fournisseurs
+
+Les contrats disponibles sont `IAiProvider`, `IAiAvatarProvider`,
+`IAiLanguageModelProvider`, `IAiSpeechToTextProvider` et `IAiTextToSpeechProvider`.
+`IAiProviderFactory` centralise leur sélection. L’adaptateur Anam utilise l’API serveur officielle
+`POST /v1/auth/session-token` avec un Bearer token, un délai d’expiration HTTP et un jeton client
+éphémère. La conversation textuelle d’un déploiement réel nécessite de configurer séparément un
+fournisseur de modèle de langage ; aucun faux appel Anam n’est simulé en production.
+
+Configuration Development :
+
+```json
+"AiTrainer": {
+  "Enabled": true,
+  "Provider": "Mock",
+  "LanguageModelProvider": "Mock",
+  "SpeechToTextProvider": "Mock",
+  "TextToSpeechProvider": "Mock",
+  "MaximumMessagesPerSession": 20,
+  "MaximumSessionDurationMinutes": 30,
+  "MaximumSessionsPerUserPerDay": 10,
+  "MaximumAudioBytes": 5000000,
+  "ConversationRetentionDays": 365,
+  "ConsentPolicyVersion": "2026-01"
+}
+```
+
+Variables réservées à une configuration réelle :
+
+```text
+AiTrainer__Enabled=true
+AiTrainer__Provider=Anam
+AiTrainer__AvatarProvider=Anam
+AiTrainer__LanguageModelProvider=<fournisseur configuré>
+Anam__ApiKey=<secret fourni par le gestionnaire de secrets>
+Anam__LlmId=<identifiant du modèle Anam>
+Anam__BaseAddress=https://api.anam.ai/v1/
+```
+
+Ne placez jamais `Anam__ApiKey` dans un fichier versionné. Les sections `HeyGen`,
+`LanguageModel`, `SpeechToText` et `TextToSpeech` servent de points d’extension ; aucun appel réel
+ne leur est envoyé dans cette étape.
+
+### Routes
+
+Admin :
+
+```text
+/Admin/AiTrainerProfiles
+/Admin/AiTrainerProfiles/Details/{id}
+/Admin/AiTrainerProfiles/Create?trainingId={id}
+/Admin/AiTrainerProfiles/Edit/{id}
+/Admin/AiTrainerProfiles/Test/{id}
+/Admin/AiSessions
+/Admin/AiSessions/Details/{id}
+```
+
+Trainer, limité à ses formations :
+
+```text
+/Trainer/AiTrainer
+/Trainer/AiTrainer/Session/{id}
+/Trainer/AiTrainer/History
+```
+
+Learner, limité à son propre historique et à ses inscriptions :
+
+```text
+/Learner/AiTrainer/Session/{id}
+/Learner/AiTrainer/History
+```
+
+Le démarrage d’une session se fait par POST depuis une leçon accessible. Les messages, audios,
+consentements, fins et annulations de session sont également des actions POST.
+
+### Seed, migration et tests
+
+Le seed Development crée de manière idempotente le profil `Coach ASP.NET Core`, lié à la formation
+`ASP.NET Core MVC — Fondamentaux`, en mode Mock, avec texte et transcription Mock activés. Il ne
+réalise aucun appel HTTP.
+
+Migration :
+
+```text
+AddAiTrainerIntegration
+```
+
+Commandes :
+
+```powershell
+dotnet ef migrations list --project src/TrainingManagement.Infrastructure --startup-project src/TrainingManagement.Web
+dotnet ef database update --project src/TrainingManagement.Infrastructure --startup-project src/TrainingManagement.Web -- --environment Development
+dotnet test TrainingManagement.sln
+```
+
+Les tests couvrent le domaine, les limites, le consentement, la modération, les formats audio, le
+Mock, les index et suppressions EF, les rôles, antiforgery, politiques de débit et validations Web.
+
+### Limites et étape suivante
+
+Cette version ne diffuse pas encore un avatar Anam dans le navigateur, ne stocke pas de média,
+n’effectue pas d’appel à un LLM réel, ne produit pas de synthèse vocale Mock, et ne fournit ni
+WebSocket ni streaming de tokens. Les coûts restent des estimations optionnelles.
+
+L’étape suivante recommandée est d’ajouter un fournisseur de langage réel derrière
+`IAiLanguageModelProvider`, une tâche d’arrière-plan pour expiration/rétention, puis l’intégration
+WebRTC du SDK avatar avec renouvellement contrôlé des jetons éphémères. Les notifications,
+paiements et fonctions IA génératives de contenu doivent rester des modules distincts.

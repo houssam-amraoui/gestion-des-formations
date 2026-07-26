@@ -8,13 +8,32 @@ using System.Threading.RateLimiting;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddRateLimiter(options => options.AddPolicy("certificate-verification", context =>
-    RateLimitPartition.GetFixedWindowLimiter(
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("certificate-verification", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
         _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0
-        })));
+        }));
+    static string UserKey(HttpContext context) => context.User.FindFirst(
+        System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ??
+        context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+    options.AddPolicy("ai-session-start", context => RateLimitPartition.GetFixedWindowLimiter(
+        UserKey(context), _ => new FixedWindowRateLimiterOptions
+        { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    options.AddPolicy("ai-message", context => RateLimitPartition.GetFixedWindowLimiter(
+        UserKey(context), _ => new FixedWindowRateLimiterOptions
+        { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    options.AddPolicy("ai-audio", context => RateLimitPartition.GetFixedWindowLimiter(
+        UserKey(context), _ => new FixedWindowRateLimiterOptions
+        { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    options.AddPolicy("ai-status", context => RateLimitPartition.GetFixedWindowLimiter(
+        UserKey(context), _ => new FixedWindowRateLimiterOptions
+        { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+});
 builder.Services.AddScoped<IDashboardRedirectService, DashboardRedirectService>();
 builder.Services.AddTrainingManagementInfrastructure(builder.Configuration, builder.Environment);
 
@@ -29,8 +48,8 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-app.UseRateLimiter();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapControllerRoute("areas", "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
