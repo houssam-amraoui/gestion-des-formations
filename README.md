@@ -32,31 +32,31 @@ and interact with an AI-powered virtual trainer.
 
 <!-- Replace this placeholder with a real screenshot of the AI trainer result. -->
 
-**Home**
+### Home
  ![home](doc/1.png)
-**Login**
+### Login
  ![Login](doc/2.png)
- **Dashboard**
+### Dashboard
  ![Dachboard](doc/3.png)
- **Formation**
+### Formation
  ![Formation](doc/4.png)
- **Formation details**
+### Formation details
  ![Formation details](doc/5.png)
- **Formateur AI**
+### Formateur AI
  ![Formateur AI](doc/6.png)
- **Formateur AI Covertation**
+### Formateur AI Covertation
  ![Formateur AI Covertation](doc/7.png)
- **Quiz**
+### Quiz
  ![Quiz](doc/8.png)
- **Resultat du quiz**
+### Resultat du quiz
  ![Resultat du quiz](doc/9.png)
- **admin Dashboard**
+### admin Dashboard
  ![admin Dashboard](doc/10.png)
- **Profils de Formateur Ai**
+### Profils de Formateur Ai
  ![Profils de Formateur Ai](doc/11.png)
- **Modifier le Profil Ai**
+### Modifier le Profil Ai
  ![Modifier le Profil Ai](doc/12.png)
- **Historique de Sessions du formateur AI**
+### Historique de Sessions du formateur AI
  ![Historique de Sessions du formateur AI](doc/13.png)
 
 
