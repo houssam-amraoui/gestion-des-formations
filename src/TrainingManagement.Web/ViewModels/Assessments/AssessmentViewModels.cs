@@ -18,6 +18,7 @@ public class AssessmentCreateViewModel
     [Range(1, int.MaxValue), Display(Name = "Limite de temps (minutes)")] public int? TimeLimitMinutes { get; set; }
     [Display(Name = "Mélanger les questions")] public bool ShuffleQuestions { get; set; }
     [Display(Name = "Afficher les bonnes réponses")] public bool ShowCorrectAnswers { get; set; }
+    [Display(Name = "Évaluation obligatoire pour terminer la formation")] public bool IsMandatory { get; set; }
 }
 public sealed class AssessmentEditViewModel : AssessmentCreateViewModel
 {

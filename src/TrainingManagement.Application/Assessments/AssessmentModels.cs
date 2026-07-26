@@ -12,15 +12,17 @@ public sealed record AssessmentDetailsModel(int Id, int LessonId, int ModuleId, 
     string? Description, AssessmentType AssessmentType, int Order, decimal PassingScore,
     int? MaximumAttempts, int? TimeLimitMinutes, bool ShuffleQuestions, bool ShowCorrectAnswers,
     bool IsPublished, bool IsArchived, int QuestionCount, decimal TotalPoints,
-    DateTime CreatedAt, DateTime? UpdatedAt);
+    DateTime CreatedAt, DateTime? UpdatedAt, bool IsMandatory);
 
 public sealed record AssessmentCreateModel(int LessonId, string Title, string? Slug,
     string? Description, AssessmentType AssessmentType, int? Order, decimal PassingScore,
-    int? MaximumAttempts, int? TimeLimitMinutes, bool ShuffleQuestions, bool ShowCorrectAnswers);
+    int? MaximumAttempts, int? TimeLimitMinutes, bool ShuffleQuestions, bool ShowCorrectAnswers,
+    bool IsMandatory = false);
 
 public sealed record AssessmentEditModel(int Id, int LessonId, string Title, string? Slug,
     string? Description, AssessmentType AssessmentType, int Order, decimal PassingScore,
-    int? MaximumAttempts, int? TimeLimitMinutes, bool ShuffleQuestions, bool ShowCorrectAnswers);
+    int? MaximumAttempts, int? TimeLimitMinutes, bool ShuffleQuestions, bool ShowCorrectAnswers,
+    bool IsMandatory = false);
 
 public sealed record AssessmentCollectionModel(int LessonId, int ModuleId, int TrainingId,
     string LessonTitle, string ModuleTitle, string TrainingTitle,

@@ -70,7 +70,13 @@ public sealed class TrainingsController(
             ThumbnailUrl = training.ThumbnailUrl, CategoryId = training.CategoryId,
             TrainerId = training.TrainerId, Level = training.Level, Language = training.Language,
             EstimatedDurationHours = training.EstimatedDurationHours,
-            Price = training.Price, IsFree = training.IsFree
+            Price = training.Price, IsFree = training.IsFree,
+            RequireAllLessonsCompleted = training.RequireAllLessonsCompleted,
+            RequireAllMandatoryAssessmentsPassed = training.RequireAllMandatoryAssessmentsPassed,
+            MinimumAverageScore = training.MinimumAverageScore,
+            CertificateEnabled = training.CertificateEnabled,
+            CertificateValidityMonths = training.CertificateValidityMonths,
+            CertificateTemplateName = training.CertificateTemplateName
         };
         await PopulateAsync(model);
         return View(model);
@@ -127,5 +133,8 @@ public sealed class TrainingsController(
     private static TrainingInput ToInput(TrainingCreateViewModel model) =>
         new(model.Title, model.Slug, model.ShortDescription, model.Description,
             model.ThumbnailUrl, model.CategoryId, model.TrainerId, model.Level,
-            model.Language, model.EstimatedDurationHours, model.Price, model.IsFree);
+            model.Language, model.EstimatedDurationHours, model.Price, model.IsFree,
+            model.RequireAllLessonsCompleted, model.RequireAllMandatoryAssessmentsPassed,
+            model.MinimumAverageScore, model.CertificateEnabled, model.CertificateValidityMonths,
+            model.CertificateTemplateName);
 }

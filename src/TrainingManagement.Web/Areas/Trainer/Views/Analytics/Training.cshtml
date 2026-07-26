@@ -1,0 +1,5 @@
+@model TrainingAnalyticsModel
+@{ViewData["Title"]="Statistiques formation";}
+<div class="container py-5"><a asp-action="Index">← Statistiques</a><h1 class="h2">@Model.TrainingTitle</h1>
+@await Html.PartialAsync("~/Views/Shared/_AnalyticsFilter.cshtml", (TrainingManagement.Web.ViewModels.Analytics.AnalyticsFilterViewModel)ViewBag.Filter)
+<div class="row g-3 my-3"><div class="col-md-3"><div class="card card-body"><small>Inscriptions</small><strong>@Model.Enrollments</strong></div></div><div class="col-md-3"><div class="card card-body"><small>Complétion</small><strong>@Model.CompletionRate.ToString("N1")%</strong></div></div><div class="col-md-3"><div class="card card-body"><small>Progression</small><strong>@Model.AverageProgress.ToString("N1")%</strong></div></div><div class="col-md-3"><div class="card card-body"><small>Certificats</small><strong>@Model.Certificates</strong></div></div></div><a class="btn btn-outline-primary" asp-controller="Exports" asp-action="TrainingAnalytics" asp-route-id="@Model.TrainingId">Exporter CSV</a></div>

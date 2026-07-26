@@ -20,6 +20,7 @@ public sealed class Assessment
     public bool ShowCorrectAnswers { get; set; }
     public bool IsPublished { get; set; }
     public bool IsArchived { get; set; }
+    public bool IsMandatory { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public ICollection<Question> Questions { get; set; } = new List<Question>();

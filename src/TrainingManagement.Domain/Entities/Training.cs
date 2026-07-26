@@ -31,6 +31,12 @@ public sealed class Training
     public DateTime? UpdatedAt { get; set; }
     public ICollection<TrainingModule> Modules { get; set; } = new List<TrainingModule>();
     public ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
+    public bool RequireAllLessonsCompleted { get; set; } = true;
+    public bool RequireAllMandatoryAssessmentsPassed { get; set; } = true;
+    public decimal? MinimumAverageScore { get; set; }
+    public bool CertificateEnabled { get; set; } = true;
+    public int? CertificateValidityMonths { get; set; }
+    [MaxLength(100)] public string? CertificateTemplateName { get; set; }
 
     public void ApplyPricing()
     {

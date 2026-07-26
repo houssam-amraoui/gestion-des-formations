@@ -18,6 +18,7 @@ public sealed class Enrollment
     public string? CreatedByAdminId { get; set; }
     public ICollection<LessonProgress> LessonProgresses { get; set; } = new List<LessonProgress>();
     public ICollection<AssessmentAttempt> Attempts { get; set; } = new List<AssessmentAttempt>();
+    public Certificate? Certificate { get; set; }
 
     public bool AllowsAccess => Status is EnrollmentStatus.Active or EnrollmentStatus.Completed;
 

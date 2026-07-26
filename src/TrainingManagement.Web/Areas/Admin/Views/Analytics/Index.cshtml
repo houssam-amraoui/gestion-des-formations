@@ -1,0 +1,100 @@
+@model AdminDashboardAnalytics
+@{
+    ViewData["Title"] = "Statistiques";
+    var series = new[]
+    {
+        ("Inscriptions", Model.EnrollmentsSeries, "bg-primary"),
+        ("Tentatives", Model.AttemptsSeries, "bg-info"),
+        ("Certificats", Model.CertificatesSeries, "bg-success")
+    };
+}
+
+<div class="container py-5">
+    <div class="d-flex flex-wrap justify-content-between gap-3">
+        <div><p class="text-secondary mb-1">Administration</p><h1 class="h2 fw-bold">Statistiques globales</h1></div>
+        <div>
+            <a class="btn btn-outline-primary" asp-controller="Exports" asp-action="Enrollments">Inscriptions CSV</a>
+            <a class="btn btn-outline-primary" asp-controller="Exports" asp-action="Progress">Progression CSV</a>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("~/Views/Shared/_AnalyticsFilter.cshtml", (TrainingManagement.Web.ViewModels.Analytics.AnalyticsFilterViewModel)ViewBag.Filter)
+
+    <div class="row g-3 my-3">
+        @foreach (var kpi in new[]
+        {
+            ("Utilisateurs", Model.TotalUsers.ToString()), ("Apprenants", Model.Learners.ToString()),
+            ("Formateurs", Model.Trainers.ToString()), ("Formations", Model.Trainings.ToString()),
+            ("Publiées", Model.PublishedTrainings.ToString()), ("Inscriptions actives", Model.ActiveEnrollments.ToString()),
+            ("Terminées", Model.CompletedEnrollments.ToString()), ("Certificats", Model.CertificatesIssued.ToString()),
+            ("Progression moyenne", $"{Model.AverageProgress:N1}%"), ("Réussite quiz", $"{Model.AssessmentSuccessRate:N1}%")
+        })
+        {
+            <div class="col-6 col-lg-3"><div class="card card-body h-100 border-0 shadow-sm"><small class="text-secondary">@kpi.Item1</small><strong class="display-6">@kpi.Item2</strong></div></div>
+        }
+    </div>
+
+    <div class="row g-4 my-2">
+        @foreach (var chart in series)
+        {
+            var maximum = Math.Max(1m, chart.Item2.Select(x => x.Value).DefaultIfEmpty(0).Max());
+            <div class="col-lg-4">
+                <div class="card card-body border-0 shadow-sm h-100">
+                    <h2 class="h5">@chart.Item1 par période</h2>
+                    @if (chart.Item2.Count == 0)
+                    {
+                        <p class="text-secondary mb-0">Aucune donnée sur cette période.</p>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-items-end gap-2 border-bottom pt-3" style="height:150px" role="img" aria-label="Graphique @chart.Item1">
+                            @foreach (var point in chart.Item2)
+                            {
+                                var height = Math.Max(5m, point.Value * 120m / maximum);
+                                <div class="@chart.Item3 rounded-top flex-grow-1" title="@point.Date.ToString("dd/MM/yyyy") : @point.Value" style="height:@height.ToString(System.Globalization.CultureInfo.InvariantCulture)px"></div>
+                            }
+                        </div>
+                        <details class="mt-3"><summary>Afficher les données</summary>
+                            <table class="table table-sm"><thead><tr><th>Date</th><th>Valeur</th></tr></thead><tbody>
+                            @foreach (var point in chart.Item2) { <tr><td>@point.Date.ToString("dd/MM/yyyy")</td><td>@point.Value</td></tr> }
+                            </tbody></table>
+                        </details>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="row g-4 my-2">
+        <div class="col-lg-6"><div class="card card-body border-0 shadow-sm h-100">
+            <h2 class="h5">Formations populaires</h2>
+            @foreach (var item in Model.PopularTrainings)
+            {
+                <div class="d-flex justify-content-between border-bottom py-2"><a asp-action="Training" asp-route-trainingId="@item.TrainingId">@item.Title</a><span>@item.Enrollments inscriptions · @item.CompletionRate.ToString("N1")%</span></div>
+            }
+        </div></div>
+        <div class="col-lg-6"><div class="card card-body border-0 shadow-sm h-100">
+            <h2 class="h5">Répartition par catégorie</h2>
+            @{ var categoryMax = Math.Max(1, Model.CategoryDistribution.Select(x => x.Trainings).DefaultIfEmpty(0).Max()); }
+            @foreach (var item in Model.CategoryDistribution)
+            {
+                var width = item.Trainings * 100m / categoryMax;
+                <div class="mb-2"><div class="d-flex justify-content-between"><span>@item.CategoryName</span><span>@item.Trainings</span></div><div class="progress"><div class="progress-bar" style="width:@width.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></div></div></div>
+            }
+        </div></div>
+        <div class="col-lg-6"><div class="card card-body border-0 shadow-sm h-100">
+            <h2 class="h5">Évaluations difficiles</h2>
+            @foreach (var item in Model.DifficultAssessments)
+            {
+                <div class="py-2"><div class="d-flex justify-content-between"><span>@item.Title</span><span>@item.SuccessRate.ToString("N1")%</span></div><div class="progress"><div class="progress-bar bg-warning" style="width:@item.SuccessRate.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></div></div></div>
+            }
+        </div></div>
+        <div class="col-lg-6"><div class="card card-body border-0 shadow-sm h-100">
+            <h2 class="h5">Activité récente</h2>
+            @foreach (var item in Model.RecentActivities)
+            {
+                <div class="border-bottom py-2"><span class="badge text-bg-light">@item.Type</span> @item.Description <small class="text-secondary d-block">@item.OccurredAt.ToString("dd/MM/yyyy HH:mm") UTC</small></div>
+            }
+        </div></div>
+    </div>
+</div>

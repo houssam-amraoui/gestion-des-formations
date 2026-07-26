@@ -21,6 +21,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<AssessmentAttempt> AssessmentAttempts => Set<AssessmentAttempt>();
     public DbSet<AttemptQuestion> AttemptQuestions => Set<AttemptQuestion>();
     public DbSet<LearnerAnswer> LearnerAnswers => Set<LearnerAnswer>();
+    public DbSet<Certificate> Certificates => Set<Certificate>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -52,6 +53,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
             entity.Property(training => training.ThumbnailUrl).HasMaxLength(500);
             entity.Property(training => training.Language).HasMaxLength(50).IsRequired();
             entity.Property(training => training.Price).HasPrecision(18, 2);
+            entity.Property(training => training.MinimumAverageScore).HasPrecision(5, 2);
+            entity.Property(training => training.CertificateTemplateName).HasMaxLength(100);
             entity.HasIndex(training => training.Slug).IsUnique();
             entity.HasOne(training => training.Category)
                 .WithMany(category => category.Trainings)
@@ -135,7 +138,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
         {
             entity.Property(item => item.LearnerId).IsRequired();
             entity.Property(item => item.ProgressPercentage).HasPrecision(5, 2);
-            entity.HasIndex(item => new { item.LearnerId, item.TrainingId });
+            entity.HasIndex(item => new { item.LearnerId, item.TrainingId }).IsUnique();
             entity.HasOne<ApplicationUser>().WithMany()
                 .HasForeignKey(item => item.LearnerId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<ApplicationUser>().WithMany()
@@ -189,6 +192,26 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
                 .HasForeignKey(item => item.AttemptQuestionId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<AnswerOption>().WithMany()
                 .HasForeignKey(item => item.AnswerOptionId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Certificate>(entity =>
+        {
+            entity.Property(item => item.CertificateNumber).HasMaxLength(100).IsRequired();
+            entity.Property(item => item.VerificationCode).HasMaxLength(100).IsRequired();
+            entity.Property(item => item.LearnerFullNameSnapshot).HasMaxLength(250).IsRequired();
+            entity.Property(item => item.TrainingTitleSnapshot).HasMaxLength(250).IsRequired();
+            entity.Property(item => item.TrainerFullNameSnapshot).HasMaxLength(250);
+            entity.Property(item => item.RevocationReason).HasMaxLength(1000);
+            entity.Property(item => item.PdfFileName).HasMaxLength(255);
+            entity.Property(item => item.PdfRelativePath).HasMaxLength(500);
+            entity.HasIndex(item => item.EnrollmentId).IsUnique();
+            entity.HasIndex(item => item.CertificateNumber).IsUnique();
+            entity.HasIndex(item => item.VerificationCode).IsUnique();
+            entity.HasIndex(item => item.Status);
+            entity.HasOne(item => item.Enrollment).WithOne(item => item.Certificate)
+                .HasForeignKey<Certificate>(item => item.EnrollmentId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<ApplicationUser>().WithMany()
+                .HasForeignKey(item => item.RevokedByAdminId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

@@ -15,6 +15,8 @@ app-verification.*.log
 *.db
 *.db-shm
 *.db-wal
+App_Data/Certificates/
+**/App_Data/Certificates/
 appsettings.Local.json
 .env
 

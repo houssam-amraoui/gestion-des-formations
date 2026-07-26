@@ -3,10 +3,18 @@ using TrainingManagement.Application.Authentication;
 using TrainingManagement.Infrastructure.Configuration;
 using TrainingManagement.Infrastructure.Identity;
 using TrainingManagement.Infrastructure.Persistence;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddRateLimiter(options => options.AddPolicy("certificate-verification", context =>
+    RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0
+        })));
 builder.Services.AddScoped<IDashboardRedirectService, DashboardRedirectService>();
 builder.Services.AddTrainingManagementInfrastructure(builder.Configuration, builder.Environment);
 
@@ -21,6 +29,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

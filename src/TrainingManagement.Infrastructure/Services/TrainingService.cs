@@ -80,7 +80,9 @@ public sealed class TrainingService(
             Status = TrainingStatus.Draft,
             CreatedAt = DateTime.UtcNow
         };
+        ApplyCompletionSettings(training, input);
         training.ApplyPricing();
+        ApplyCompletionSettings(training, input);
         dbContext.Trainings.Add(training);
         await dbContext.SaveChangesAsync(cancellationToken);
         return ServiceResult<int>.Success(training.Id);
@@ -150,6 +152,10 @@ public sealed class TrainingService(
         if (category is null || !category.IsActive) return ("", "La formation doit appartenir à une catégorie active.");
         if (input.EstimatedDurationHours <= 0) return ("", "La durée doit être supérieure à zéro.");
         if (input.Price < 0) return ("", "Le prix ne peut pas être négatif.");
+        if (input.MinimumAverageScore is < 0 or > 100)
+            return ("", "La moyenne minimale doit être comprise entre 0 et 100.");
+        if (input.CertificateValidityMonths is <= 0)
+            return ("", "La validité du certificat doit être positive.");
         if (!string.IsNullOrWhiteSpace(input.TrainerId))
         {
             var trainer = await userManager.FindByIdAsync(input.TrainerId);
@@ -187,7 +193,10 @@ public sealed class TrainingService(
             training.Description, training.ThumbnailUrl, training.CategoryId, training.Category.Name,
             training.TrainerId, trainer == null ? null : trainer.FirstName + " " + trainer.LastName,
             training.Level, training.Language, training.EstimatedDurationHours, training.Price,
-            training.IsFree, training.Status, training.PublishedAt, training.CreatedAt, training.UpdatedAt);
+            training.IsFree, training.Status, training.PublishedAt, training.CreatedAt, training.UpdatedAt,
+            training.RequireAllLessonsCompleted, training.RequireAllMandatoryAssessmentsPassed,
+            training.MinimumAverageScore, training.CertificateEnabled, training.CertificateValidityMonths,
+            training.CertificateTemplateName);
 
     private static async Task<PagedResult<TrainingSummary>> PageAsync(
         IQueryable<TrainingProjection> query, int requestedPage, int requestedPageSize, CancellationToken cancellationToken)
@@ -204,6 +213,15 @@ public sealed class TrainingService(
     }
 
     private static string? NullIfWhiteSpace(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    private static void ApplyCompletionSettings(Training training, TrainingInput input)
+    {
+        training.RequireAllLessonsCompleted = input.RequireAllLessonsCompleted;
+        training.RequireAllMandatoryAssessmentsPassed = input.RequireAllMandatoryAssessmentsPassed;
+        training.MinimumAverageScore = input.MinimumAverageScore;
+        training.CertificateEnabled = input.CertificateEnabled;
+        training.CertificateValidityMonths = input.CertificateValidityMonths;
+        training.CertificateTemplateName = NullIfWhiteSpace(input.CertificateTemplateName);
+    }
 
     private sealed class TrainingProjection
     {

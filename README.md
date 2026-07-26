@@ -424,3 +424,187 @@ Cette étape ne couvre pas encore les certificats, classements, paiements, notif
 ## Prochaine étape recommandée
 
 Ajouter les certificats et les notifications, puis enrichir le suivi avec une correction manuelle des réponses courtes et des rapports exportables. Les paiements devront être traités séparément avec un fournisseur et des webhooks idempotents.
+
+## Certificats, complétion et statistiques
+
+L’étape 6 ajoute une règle de complétion centralisée, l’émission de certificats PDF vérifiables,
+des tableaux de bord analytiques par rôle et des exports CSV.
+
+### Règles de complétion
+
+Chaque formation peut configurer :
+
+- `RequireAllLessonsCompleted` : toutes les leçons publiées et non archivées doivent être terminées ;
+- `RequireAllMandatoryAssessmentsPassed` : toutes les évaluations obligatoires, publiées et non archivées doivent être réussies ;
+- `MinimumAverageScore` : moyenne minimale optionnelle, comprise entre 0 et 100 ;
+- `CertificateEnabled` : autorise l’émission automatique du certificat ;
+- `CertificateValidityMonths` : durée de validité optionnelle, strictement positive ;
+- `CertificateTemplateName` : nom du modèle conservé pour une évolution future.
+
+Une évaluation peut être marquée `IsMandatory`. La meilleure tentative terminée est utilisée pour
+chaque évaluation applicable. Lorsqu’aucune évaluation ne s’applique, la contrainte de moyenne est
+considérée satisfaite. La finalisation est idempotente : elle place l’inscription à 100 %, renseigne
+`CompletedAt`, puis émet au maximum un certificat par inscription.
+
+### Certificats
+
+Un certificat conserve des instantanés du nom de l’apprenant, du titre de la formation et du
+formateur. Son numéro et son code de vérification sont uniques et générés avec une source
+cryptographiquement sûre. Les états sont `Active`, `Revoked` et `Expired`.
+
+Les PDF sont générés côté serveur avec PDFsharp et QRCoder. Ils incluent le numéro, les informations
+de formation, la date d’émission et un QR code pointant vers la vérification publique. Les fichiers
+sont placés dans un stockage privé hors de `wwwroot` (`App_Data/Certificates` par défaut) et ne sont
+servis qu’après un contrôle d’autorisation. La révocation exige un motif ; la réactivation conserve
+l’historique de révocation disponible.
+
+Routes publiques :
+
+```text
+GET  /Certificates/Verify
+POST /Certificates/Verify
+GET  /Certificates/Verify/{verificationCode}
+```
+
+La page publique n’expose ni email, ni identifiant utilisateur, ni chemin de fichier. Elle porte
+également une directive `noindex, nofollow`.
+
+Routes Admin :
+
+```text
+/Admin/Certificates
+/Admin/Certificates/Details/{id}
+/Admin/Certificates/Download/{id}
+/Admin/Certificates/Generate/{enrollmentId}
+/Admin/Certificates/Regenerate/{id}
+/Admin/Certificates/Revoke/{id}
+/Admin/Certificates/Reactivate/{id}
+/Admin/Analytics
+/Admin/Analytics/Trainings/{trainingId}
+```
+
+Routes Learner, limitées aux certificats du compte connecté :
+
+```text
+/Learner/Certificates
+/Learner/Certificates/Details/{id}
+/Learner/Certificates/Download/{id}
+/Learner/Statistics
+```
+
+Routes Trainer, en lecture seule et limitées aux formations affectées :
+
+```text
+/Trainer/Certificates
+/Trainer/Certificates/Details/{id}
+/Trainer/Analytics
+/Trainer/Analytics/Trainings/{trainingId}
+```
+
+### Statistiques et exports
+
+Les périodes disponibles sont les 7, 30 ou 90 derniers jours, l’année en cours et une période
+personnalisée de 366 jours maximum. Les indicateurs couvrent notamment les inscriptions, la
+progression moyenne, la complétion, le taux de réussite aux évaluations, les certificats, les
+formations populaires et les points d’abandon par leçon.
+
+Définitions principales :
+
+- taux de complétion = inscriptions terminées / inscriptions de la population sélectionnée ;
+- progression moyenne = moyenne de `ProgressPercentage` des inscriptions sélectionnées ;
+- taux de réussite = tentatives terminées et réussies / tentatives terminées ;
+- abandon d’une leçon = progressions commencées mais non terminées / progressions commencées.
+
+Exports Admin :
+
+```text
+/Admin/Exports/Enrollments
+/Admin/Exports/Progress
+/Admin/Exports/AssessmentResults
+/Admin/Exports/Certificates
+/Admin/Exports/TrainingAnalytics/{id}
+```
+
+Exports Trainer, automatiquement limités à ses formations :
+
+```text
+/Trainer/Exports/Progress
+/Trainer/Exports/AssessmentResults
+/Trainer/Exports/TrainingAnalytics/{id}
+```
+
+Les CSV sont encodés en UTF-8 avec BOM, utilisent le point-virgule comme séparateur, échappent les
+guillemets et neutralisent les cellules commençant par `=`, `+`, `-` ou `@` afin de réduire les
+risques d’injection de formule.
+
+### Configuration
+
+Exemple de configuration :
+
+```json
+{
+  "Application": {
+    "Name": "TrainingManagement",
+    "PublicBaseUrl": "https://example.com"
+  },
+  "CertificateStorage": {
+    "BasePath": "App_Data/Certificates"
+  }
+}
+```
+
+En production, fournir au minimum :
+
+```text
+Application__PublicBaseUrl
+CertificateStorage__BasePath
+ConnectionStrings__DefaultConnection
+```
+
+Le dossier de certificats et la base SQLite de développement sont ignorés par Git. Pour une
+production multi-instance, remplacer le stockage local par un stockage objet privé tout en
+conservant `ICertificateStorageService`.
+
+Packages ajoutés :
+
+```text
+PDFsharp 6.2.4
+QRCoder 1.8.0
+```
+
+Migration de l’étape :
+
+```text
+AddCertificatesAndCompletionRules
+RemoveNonPortableTrainingCheckConstraints
+```
+
+La seconde migration additive retire deux contraintes SQL générées initialement qui ne sont pas
+portables lors d’une reconstruction de table SQLite. Les règles correspondantes restent appliquées
+par les ViewModels et les services métier.
+
+Commandes :
+
+```powershell
+dotnet ef migrations list --project src/TrainingManagement.Infrastructure --startup-project src/TrainingManagement.Web
+dotnet ef database update --project src/TrainingManagement.Infrastructure --startup-project src/TrainingManagement.Web
+```
+
+### Données de démonstration
+
+En Development, le seed idempotent termine l’inscription de
+`learner@training.local` à `ASP.NET Core MVC — Fondamentaux`, ajoute une tentative réussie à
+l’évaluation obligatoire si nécessaire, puis génère un certificat actif et son PDF. Le numéro et
+le code de vérification sont volontairement générés à chaque nouvelle base et ne sont pas fixés
+dans le dépôt.
+
+### Limites actuelles et prochaine étape
+
+Cette étape ne fournit pas de modèles PDF personnalisables par l’administrateur, de stockage objet,
+d’envoi d’email, de notifications, de paiement, de certificat signé cryptographiquement, de
+classement, ni d’intégration IA. Les statistiques sont calculées à la demande et conviennent au
+volume actuel ; des agrégats persistés pourront être ajoutés à grande échelle.
+
+La prochaine étape recommandée est d’ajouter les notifications et l’envoi contrôlé des certificats,
+puis d’introduire un stockage objet privé et des tâches en arrière-plan. Les paiements et
+intégrations IA doivent rester des modules séparés.

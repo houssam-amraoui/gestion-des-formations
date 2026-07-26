@@ -198,6 +198,9 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsArchived")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsMandatory")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsPublished")
                         .HasColumnType("INTEGER");
 
@@ -405,6 +408,93 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.Certificate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CertificateNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CompletionDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("EnrollmentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("IssuedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LearnerFullNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PdfFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PdfRelativePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RevocationReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RevokedByAdminId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TrainerFullNameSnapshot")
+                        .HasMaxLength(250)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TrainingTitleSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("VerificationCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CertificateNumber")
+                        .IsUnique();
+
+                    b.HasIndex("EnrollmentId")
+                        .IsUnique();
+
+                    b.HasIndex("RevokedByAdminId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("VerificationCode")
+                        .IsUnique();
+
+                    b.ToTable("Certificates");
+                });
+
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Enrollment", b =>
                 {
                     b.Property<int>("Id")
@@ -449,7 +539,8 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("TrainingId");
 
-                    b.HasIndex("LearnerId", "TrainingId");
+                    b.HasIndex("LearnerId", "TrainingId")
+                        .IsUnique();
 
                     b.ToTable("Enrollments");
                 });
@@ -701,6 +792,16 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
                     b.Property<int>("CategoryId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("CertificateEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CertificateTemplateName")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("CertificateValidityMonths")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -722,12 +823,22 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
                     b.Property<int>("Level")
                         .HasColumnType("INTEGER");
 
+                    b.Property<decimal?>("MinimumAverageScore")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("Price")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("RequireAllLessonsCompleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("RequireAllMandatoryAssessmentsPassed")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("ShortDescription")
                         .IsRequired()
@@ -1013,6 +1124,22 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
                     b.Navigation("Question");
                 });
 
+            modelBuilder.Entity("TrainingManagement.Domain.Entities.Certificate", b =>
+                {
+                    b.HasOne("TrainingManagement.Domain.Entities.Enrollment", "Enrollment")
+                        .WithOne("Certificate")
+                        .HasForeignKey("TrainingManagement.Domain.Entities.Certificate", "EnrollmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TrainingManagement.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("RevokedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Enrollment");
+                });
+
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Enrollment", b =>
                 {
                     b.HasOne("TrainingManagement.Infrastructure.Identity.ApplicationUser", null)
@@ -1155,6 +1282,8 @@ namespace TrainingManagement.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("TrainingManagement.Domain.Entities.Enrollment", b =>
                 {
                     b.Navigation("Attempts");
+
+                    b.Navigation("Certificate");
 
                     b.Navigation("LessonProgresses");
                 });

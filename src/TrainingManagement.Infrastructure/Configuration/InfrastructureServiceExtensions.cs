@@ -20,6 +20,11 @@ using TrainingManagement.Application.Attempts;
 using TrainingManagement.Infrastructure.Identity;
 using TrainingManagement.Infrastructure.Persistence;
 using TrainingManagement.Infrastructure.Services;
+using TrainingManagement.Application.Completion;
+using TrainingManagement.Application.Certificates;
+using TrainingManagement.Application.Analytics;
+using TrainingManagement.Application.Exports;
+using TrainingManagement.Infrastructure.Certificates;
 
 namespace TrainingManagement.Infrastructure.Configuration;
 
@@ -85,10 +90,21 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ILessonProgressService, LessonProgressService>();
         services.AddSingleton<IAttemptScoringService, AttemptScoringService>();
         services.AddScoped<IAssessmentAttemptService, AssessmentAttemptService>();
+        services.AddScoped<ITrainingCompletionService, TrainingCompletionService>();
+        services.AddScoped<ICertificateService, CertificateService>();
+        services.AddSingleton<ICertificateNumberGenerator, CertificateNumberGenerator>();
+        services.AddSingleton<ICertificatePdfService, CertificatePdfService>();
+        services.AddSingleton<ICertificateStorageService, LocalCertificateStorageService>();
+        services.AddScoped<IAnalyticsService, AnalyticsService>();
+        services.AddScoped<ICsvExportService, CsvExportService>();
         services.AddSingleton<IExternalMediaUrlService, ExternalMediaUrlService>();
         services.AddScoped<IdentityDataSeeder>();
         services.Configure<SeedTrainerOptions>(configuration.GetSection(SeedTrainerOptions.SectionName));
         services.Configure<SeedLearnerOptions>(configuration.GetSection(SeedLearnerOptions.SectionName));
+        services.AddOptions<ApplicationOptions>().Bind(configuration.GetSection(ApplicationOptions.SectionName))
+            .ValidateDataAnnotations().ValidateOnStart();
+        services.AddOptions<CertificateStorageOptions>().Bind(configuration.GetSection(CertificateStorageOptions.SectionName))
+            .ValidateDataAnnotations().ValidateOnStart();
         services.AddScoped<DevelopmentDataSeeder>();
         return services;
     }

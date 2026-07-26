@@ -1,0 +1,60 @@
+@model TrainerDashboardAnalytics
+@{
+    ViewData["Title"] = "Mes statistiques";
+}
+
+<div class="container py-5">
+    <div class="d-flex flex-wrap justify-content-between gap-3">
+        <h1 class="h2 fw-bold">Statistiques de mes formations</h1>
+        <div>
+            <a class="btn btn-outline-primary" asp-controller="Exports" asp-action="Progress">Progression CSV</a>
+            <a class="btn btn-outline-primary" asp-controller="Exports" asp-action="AssessmentResults">Résultats CSV</a>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("~/Views/Shared/_AnalyticsFilter.cshtml", (TrainingManagement.Web.ViewModels.Analytics.AnalyticsFilterViewModel)ViewBag.Filter)
+
+    <div class="row g-3 my-3">
+        @foreach (var kpi in new[]
+        {
+            ("Apprenants", Model.Learners.ToString()), ("Inscriptions actives", Model.ActiveEnrollments.ToString()),
+            ("Progression", $"{Model.AverageProgress:N1}%"), ("Formations terminées", Model.CompletedTrainings.ToString()),
+            ("Certificats", Model.Certificates.ToString()), ("Réussite quiz", $"{Model.AssessmentSuccessRate:N1}%")
+        })
+        {
+            <div class="col-md-4"><div class="card card-body shadow-sm border-0 h-100"><small>@kpi.Item1</small><strong class="display-6">@kpi.Item2</strong></div></div>
+        }
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6"><div class="card card-body border-0 shadow-sm h-100">
+            <h2 class="h5">Évaluations difficiles</h2>
+            <div class="table-responsive"><table class="table"><thead><tr><th>Évaluation</th><th>Tentatives</th><th>Réussite</th></tr></thead><tbody>
+            @foreach (var item in Model.DifficultAssessments) { <tr><td>@item.Title</td><td>@item.Attempts</td><td>@item.SuccessRate.ToString("N1")%</td></tr> }
+            </tbody></table></div>
+        </div></div>
+        <div class="col-lg-6"><div class="card card-body border-0 shadow-sm h-100">
+            <h2 class="h5">Activité récente</h2>
+            @foreach (var item in Model.RecentActivities)
+            {
+                <div class="border-bottom py-2"><span class="badge text-bg-light">@item.Type</span> @item.Description <small class="text-secondary d-block">@item.OccurredAt.ToString("dd/MM/yyyy HH:mm") UTC</small></div>
+            }
+        </div></div>
+        <div class="col-lg-6"><div class="card card-body border-0 shadow-sm h-100">
+            <h2 class="h5">Apprenants récemment actifs</h2>
+            @if (Model.RecentlyActiveLearners.Count == 0) { <p class="text-secondary">Aucune activité sur la période.</p> }
+            @foreach (var item in Model.RecentlyActiveLearners)
+            {
+                <div class="border-bottom py-2"><strong>@item.LearnerName</strong><span class="d-block">@item.TrainingTitle</span><small class="text-secondary">@item.LastActivity?.ToString("dd/MM/yyyy HH:mm") UTC</small></div>
+            }
+        </div></div>
+        <div class="col-lg-6"><div class="card card-body border-0 shadow-sm h-100">
+            <h2 class="h5">Sans activité depuis 30 jours</h2>
+            @if (Model.InactiveLearners.Count == 0) { <p class="text-secondary">Aucun apprenant inactif.</p> }
+            @foreach (var item in Model.InactiveLearners)
+            {
+                <div class="border-bottom py-2"><strong>@item.LearnerName</strong><span class="d-block">@item.TrainingTitle</span><small class="text-secondary">Dernière activité : @(item.LastActivity?.ToString("dd/MM/yyyy") ?? "jamais")</small></div>
+            }
+        </div></div>
+    </div>
+</div>

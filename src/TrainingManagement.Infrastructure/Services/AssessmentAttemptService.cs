@@ -5,12 +5,16 @@ using TrainingManagement.Application.Common;
 using TrainingManagement.Domain.Entities;
 using TrainingManagement.Domain.Enums;
 using TrainingManagement.Infrastructure.Persistence;
+using TrainingManagement.Application.Completion;
+using TrainingManagement.Application.Certificates;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace TrainingManagement.Infrastructure.Services;
 
 public sealed class AssessmentAttemptService(
     ApplicationDbContext db,
-    IAttemptScoringService scoring) : IAssessmentAttemptService
+    IAttemptScoringService scoring,
+    IServiceProvider services) : IAssessmentAttemptService
 {
     private sealed record SnapshotOption(int Id, string Text, int Order, bool IsCorrect);
 
@@ -145,6 +149,14 @@ public sealed class AssessmentAttemptService(
         if (error is not null) return ServiceResult<AttemptResultModel>.Failure(error);
         await FinalizeAsync(attempt, AttemptStatus.Submitted, now, token);
         if (transaction is not null) await transaction.CommitAsync(token);
+        var completion = services.GetService<ITrainingCompletionService>();
+        if (completion is not null)
+        {
+            var finalized = await completion.FinalizeAsync(attempt.EnrollmentId, token);
+            var certificates = services.GetService<ICertificateService>();
+            if (certificates is not null && finalized.Succeeded && finalized.Value?.Completed == true)
+                await certificates.GenerateAsync(attempt.EnrollmentId, token);
+        }
         return ServiceResult<AttemptResultModel>.Success(MapResult(attempt));
     }
 

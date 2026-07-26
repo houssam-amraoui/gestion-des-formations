@@ -1,0 +1,6 @@
+@model CertificateDetailsModel
+@{var css=Model.Status==CertificateStatus.Active?"success":Model.Status==CertificateStatus.Revoked?"danger":"warning";}
+<div class="card border-0 shadow-sm"><div class="card-body p-4">
+<div class="d-flex justify-content-between"><div><span class="badge text-bg-@css">@Model.Status</span><h1 class="h3 mt-2">@Model.TrainingTitle</h1><p class="lead">@Model.LearnerFullName</p></div><div class="text-end"><strong>@Model.CertificateNumber</strong><br/><small class="text-secondary">Émis le @Model.IssuedAt.ToString("dd/MM/yyyy")</small></div></div>
+<dl class="row mt-3"><dt class="col-sm-4">Réussite</dt><dd class="col-sm-8">@Model.CompletionDate.ToString("dd/MM/yyyy")</dd><dt class="col-sm-4">Expiration</dt><dd class="col-sm-8">@(Model.ExpiresAt?.ToString("dd/MM/yyyy")??"Aucune")</dd><dt class="col-sm-4">Formateur</dt><dd class="col-sm-8">@(Model.TrainerFullName??"—")</dd><dt class="col-sm-4">Code public</dt><dd class="col-sm-8"><code>@Model.VerificationCode</code></dd></dl>
+</div></div>

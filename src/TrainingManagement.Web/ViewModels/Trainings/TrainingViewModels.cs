@@ -52,6 +52,18 @@ public class TrainingCreateViewModel
     public decimal Price { get; set; }
     [Display(Name = "Formation gratuite")]
     public bool IsFree { get; set; }
+    [Display(Name = "Exiger toutes les leçons terminées")]
+    public bool RequireAllLessonsCompleted { get; set; } = true;
+    [Display(Name = "Exiger toutes les évaluations obligatoires réussies")]
+    public bool RequireAllMandatoryAssessmentsPassed { get; set; } = true;
+    [Range(typeof(decimal), "0", "100"), Display(Name = "Moyenne minimale (%)")]
+    public decimal? MinimumAverageScore { get; set; }
+    [Display(Name = "Activer les certificats")]
+    public bool CertificateEnabled { get; set; } = true;
+    [Range(1, 1200), Display(Name = "Validité du certificat (mois)")]
+    public int? CertificateValidityMonths { get; set; }
+    [StringLength(100), Display(Name = "Modèle de certificat")]
+    public string? CertificateTemplateName { get; set; }
     public IReadOnlyCollection<SelectListItem> Categories { get; set; } = [];
     public IReadOnlyCollection<SelectListItem> Trainers { get; set; } = [];
 }

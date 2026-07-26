@@ -32,7 +32,7 @@ public sealed class AssessmentService(ApplicationDbContext db) : IAssessmentServ
             x.Title, x.Slug, x.Description, x.AssessmentType, x.Order, x.PassingScore,
             x.MaximumAttempts, x.TimeLimitMinutes, x.ShuffleQuestions, x.ShowCorrectAnswers,
             x.IsPublished, x.IsArchived, x.Questions.Count, x.Questions.Sum(q => q.Points),
-            x.CreatedAt, x.UpdatedAt)).SingleOrDefaultAsync(token);
+            x.CreatedAt, x.UpdatedAt, x.IsMandatory)).SingleOrDefaultAsync(token);
 
     public async Task<ServiceResult<int>> CreateAsync(AssessmentCreateModel model, CancellationToken token = default)
     {
@@ -49,7 +49,8 @@ public sealed class AssessmentService(ApplicationDbContext db) : IAssessmentServ
             Description = Trim(model.Description), AssessmentType = model.AssessmentType, Order = order,
             PassingScore = model.PassingScore, MaximumAttempts = model.MaximumAttempts,
             TimeLimitMinutes = model.TimeLimitMinutes, ShuffleQuestions = model.ShuffleQuestions,
-            ShowCorrectAnswers = model.ShowCorrectAnswers, CreatedAt = DateTime.UtcNow };
+            ShowCorrectAnswers = model.ShowCorrectAnswers, IsMandatory = model.IsMandatory,
+            CreatedAt = DateTime.UtcNow };
         db.Assessments.Add(entity);
         await db.SaveChangesAsync(token);
         if (transaction is not null) await transaction.CommitAsync(token);
@@ -72,6 +73,7 @@ public sealed class AssessmentService(ApplicationDbContext db) : IAssessmentServ
         entity.AssessmentType = model.AssessmentType; entity.PassingScore = model.PassingScore;
         entity.MaximumAttempts = model.MaximumAttempts; entity.TimeLimitMinutes = model.TimeLimitMinutes;
         entity.ShuffleQuestions = model.ShuffleQuestions; entity.ShowCorrectAnswers = model.ShowCorrectAnswers;
+        entity.IsMandatory = model.IsMandatory;
         entity.UpdatedAt = DateTime.UtcNow;
         await OrderingService.RepositionAssessmentAsync(db, entity, model.Order, token);
         if (transaction is not null) await transaction.CommitAsync(token);
@@ -163,7 +165,7 @@ public sealed class AssessmentService(ApplicationDbContext db) : IAssessmentServ
                 x.Lesson.Title, x.Lesson.TrainingModule.Title, x.Lesson.TrainingModule.Training.Title,
                 x.Title, x.Slug, x.Description, x.AssessmentType, x.Order, x.PassingScore, x.MaximumAttempts,
                 x.TimeLimitMinutes, x.ShuffleQuestions, x.ShowCorrectAnswers, x.IsPublished, x.IsArchived,
-                x.Questions.Count, x.Questions.Sum(q => q.Points), x.CreatedAt, x.UpdatedAt),
+                x.Questions.Count, x.Questions.Sum(q => q.Points), x.CreatedAt, x.UpdatedAt, x.IsMandatory),
             x.Questions.OrderBy(q => q.Order).Select(q => new AssessmentQuestionView(q.Id, q.QuestionType,
                 q.Statement, q.Explanation, q.Order, q.Points, q.ExpectedAnswer, q.IsPublished,
                 q.AnswerOptions.OrderBy(o => o.Order).Select(o => new AnswerOptionView(o.Id, o.Text, o.Order, o.IsCorrect)).ToList())).ToList(), true));

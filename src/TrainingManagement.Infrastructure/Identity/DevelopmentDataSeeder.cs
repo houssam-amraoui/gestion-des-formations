@@ -5,6 +5,9 @@ using TrainingManagement.Domain.Constants;
 using TrainingManagement.Domain.Entities;
 using TrainingManagement.Domain.Enums;
 using TrainingManagement.Infrastructure.Persistence;
+using TrainingManagement.Application.Completion;
+using TrainingManagement.Application.Certificates;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace TrainingManagement.Infrastructure.Identity;
 
@@ -13,7 +16,8 @@ public sealed class DevelopmentDataSeeder(
     UserManager<ApplicationUser> userManager,
     RoleManager<IdentityRole> roleManager,
     IOptions<SeedTrainerOptions> options,
-    IOptions<SeedLearnerOptions> learnerOptions)
+    IOptions<SeedLearnerOptions> learnerOptions,
+    IServiceProvider services)
 {
     public async Task SeedAsync()
     {
@@ -108,6 +112,13 @@ public sealed class DevelopmentDataSeeder(
             training.Publish(DateTime.UtcNow);
             dbContext.Trainings.Add(training);
         }
+        await dbContext.SaveChangesAsync();
+        var configured = await dbContext.Trainings.SingleAsync(x => x.Slug == "aspnet-core-mvc-fondamentaux");
+        configured.RequireAllLessonsCompleted = true;
+        configured.RequireAllMandatoryAssessmentsPassed = true;
+        configured.MinimumAverageScore = 60;
+        configured.CertificateEnabled = true;
+        configured.CertificateValidityMonths = null;
         await dbContext.SaveChangesAsync();
     }
 
@@ -244,6 +255,7 @@ public sealed class DevelopmentDataSeeder(
             dbContext.Assessments.Add(quiz);
             await dbContext.SaveChangesAsync();
         }
+        quiz.IsMandatory = true;
 
         await SeedQuestionAsync(quiz, 1, QuestionType.SingleChoice,
             "Quel composant reçoit principalement les requêtes HTTP dans une application ASP.NET Core MVC ?",
@@ -361,30 +373,62 @@ public sealed class DevelopmentDataSeeder(
         }
         var lessons = await dbContext.Lessons.Where(x => x.TrainingModule.TrainingId == training.Id &&
             x.IsPublished && !x.IsArchived && x.TrainingModule.IsPublished && !x.TrainingModule.IsArchived)
-            .OrderBy(x => x.TrainingModule.Order).ThenBy(x => x.Order).Take(2).ToListAsync();
-        if (lessons.Count > 0 && !await dbContext.LessonProgresses.AnyAsync(x =>
-            x.EnrollmentId == enrollment.Id && x.LessonId == lessons[0].Id))
-            dbContext.LessonProgresses.Add(new LessonProgress
+            .OrderBy(x => x.TrainingModule.Order).ThenBy(x => x.Order).ToListAsync();
+        var completionService = services.GetService<ITrainingCompletionService>();
+        var certificateService = services.GetService<ICertificateService>();
+        if (completionService is null || certificateService is null)
+        {
+            foreach (var lesson in lessons.Take(2))
             {
-                EnrollmentId = enrollment.Id, LessonId = lessons[0].Id,
-                Status = LessonProgressStatus.Completed, FirstAccessedAt = DateTime.UtcNow.AddDays(-2),
-                LastAccessedAt = DateTime.UtcNow.AddDays(-1), CompletedAt = DateTime.UtcNow.AddDays(-1)
-            });
-        if (lessons.Count > 1 && !await dbContext.LessonProgresses.AnyAsync(x =>
-            x.EnrollmentId == enrollment.Id && x.LessonId == lessons[1].Id))
-            dbContext.LessonProgresses.Add(new LessonProgress
+                var progress = await dbContext.LessonProgresses.SingleOrDefaultAsync(x =>
+                    x.EnrollmentId == enrollment.Id && x.LessonId == lesson.Id);
+                if (progress is null)
+                {
+                    progress = new LessonProgress { EnrollmentId = enrollment.Id, LessonId = lesson.Id };
+                    dbContext.LessonProgresses.Add(progress);
+                }
+                if (lesson == lessons.First()) progress.Complete(DateTime.UtcNow.AddDays(-1));
+                else progress.RecordAccess(DateTime.UtcNow.AddHours(-1));
+            }
+            await dbContext.SaveChangesAsync();
+            var completedCount = await dbContext.LessonProgresses.CountAsync(x =>
+                x.EnrollmentId == enrollment.Id && x.Status == LessonProgressStatus.Completed);
+            enrollment.SetProgress(lessons.Count == 0 ? 0 : completedCount * 100m / lessons.Count, DateTime.UtcNow);
+            enrollment.LastAccessedAt ??= DateTime.UtcNow.AddHours(-1);
+            await dbContext.SaveChangesAsync();
+            return;
+        }
+        foreach (var lesson in lessons)
+        {
+            var progress = await dbContext.LessonProgresses.SingleOrDefaultAsync(x =>
+                x.EnrollmentId == enrollment.Id && x.LessonId == lesson.Id);
+            if (progress is null)
             {
-                EnrollmentId = enrollment.Id, LessonId = lessons[1].Id,
-                Status = LessonProgressStatus.InProgress, FirstAccessedAt = DateTime.UtcNow.AddHours(-2),
-                LastAccessedAt = DateTime.UtcNow.AddHours(-1)
-            });
+                progress = new LessonProgress { EnrollmentId = enrollment.Id, LessonId = lesson.Id };
+                dbContext.LessonProgresses.Add(progress);
+            }
+            progress.Complete(DateTime.UtcNow.AddDays(-1));
+            progress.TimeSpentSeconds = Math.Max(progress.TimeSpentSeconds, lesson.EstimatedDurationMinutes * 60);
+        }
         await dbContext.SaveChangesAsync();
-        var total = await dbContext.Lessons.CountAsync(x => x.TrainingModule.TrainingId == training.Id &&
-            x.IsPublished && !x.IsArchived && x.TrainingModule.IsPublished && !x.TrainingModule.IsArchived);
-        var completed = await dbContext.LessonProgresses.CountAsync(x => x.EnrollmentId == enrollment.Id &&
-            x.Status == LessonProgressStatus.Completed && x.Lesson.IsPublished && !x.Lesson.IsArchived);
-        enrollment.SetProgress(total == 0 ? 0 : completed * 100m / total, DateTime.UtcNow);
+        var mandatory = await dbContext.Assessments.SingleAsync(x =>
+            x.Lesson.TrainingModule.TrainingId == training.Id && x.IsMandatory);
+        if (!await dbContext.AssessmentAttempts.AnyAsync(x => x.EnrollmentId == enrollment.Id &&
+            x.AssessmentId == mandatory.Id && x.Passed == true))
+        {
+            dbContext.AssessmentAttempts.Add(new AssessmentAttempt
+            {
+                EnrollmentId = enrollment.Id, AssessmentId = mandatory.Id, AttemptNumber =
+                    (await dbContext.AssessmentAttempts.Where(x => x.EnrollmentId == enrollment.Id &&
+                        x.AssessmentId == mandatory.Id).MaxAsync(x => (int?)x.AttemptNumber) ?? 0) + 1,
+                Status = AttemptStatus.Submitted, StartedAt = DateTime.UtcNow.AddHours(-1),
+                SubmittedAt = DateTime.UtcNow.AddMinutes(-45), Score = 100, MaximumScore = 100,
+                PercentageScore = 100, Passed = true, DurationSeconds = 900
+            });
+        }
         enrollment.LastAccessedAt ??= DateTime.UtcNow.AddHours(-1);
         await dbContext.SaveChangesAsync();
+        await completionService.FinalizeAsync(enrollment.Id);
+        await certificateService.GenerateAsync(enrollment.Id);
     }
 }

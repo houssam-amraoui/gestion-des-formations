@@ -1,0 +1,18 @@
+@model TrainingManagement.Web.ViewModels.Certificates.CertificateVerifyViewModel
+@{ ViewData["Title"]="Vérifier un certificat"; ViewData["Robots"]="noindex,nofollow"; }
+<div class="container py-5" style="max-width:850px">
+ <h1 class="fw-bold">Vérifier un certificat</h1><p class="text-secondary">Saisissez le numéro ou le code public figurant sur le certificat.</p>
+ <form method="post" asp-action="Verify" class="card card-body shadow-sm mb-4"><div class="input-group"><input asp-for="Query" class="form-control" placeholder="CERT-2026-… ou code de vérification"/><button class="btn btn-primary">Vérifier</button></div><span asp-validation-for="Query" class="text-danger"></span></form>
+ @if(Model.Result is { } r){
+  <div class="card border-0 shadow-sm"><div class="card-body p-4">
+  @if(!r.Found){<div class="alert alert-secondary mb-0"><h2 class="h4">Certificat introuvable</h2><p class="mb-0">Aucun certificat ne correspond à cette référence.</p></div>}
+  else {
+   var css=r.Status==CertificateStatus.Active?"success":r.Status==CertificateStatus.Revoked?"danger":"warning";
+   <span class="badge text-bg-@css">@r.Status</span><h2 class="h3 mt-3">@r.TrainingTitle</h2><p class="lead">@r.LearnerFullName</p>
+   @if(r.Status==CertificateStatus.Revoked){<div class="alert alert-danger">Ce certificat a été révoqué et n’est plus valide.</div>}
+   else if(r.Status==CertificateStatus.Expired){<div class="alert alert-warning">Ce certificat est authentique, mais sa période de validité est terminée.</div>}
+   else {<div class="alert alert-success">Ce certificat est authentique et valide.</div>}
+   <dl class="row"><dt class="col-sm-4">Numéro</dt><dd class="col-sm-8">@r.CertificateNumber</dd><dt class="col-sm-4">Formation terminée</dt><dd class="col-sm-8">@r.CompletionDate?.ToString("dd/MM/yyyy")</dd><dt class="col-sm-4">Émis le</dt><dd class="col-sm-8">@r.IssuedAt?.ToString("dd/MM/yyyy")</dd><dt class="col-sm-4">Expiration</dt><dd class="col-sm-8">@(r.ExpiresAt?.ToString("dd/MM/yyyy")??"Aucune")</dd>@if(r.TrainerFullName is not null){<dt class="col-sm-4">Formateur</dt><dd class="col-sm-8">@r.TrainerFullName</dd>}</dl>
+  }</div></div>
+ }
+</div>

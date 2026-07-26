@@ -1,0 +1,40 @@
+@model TrainingManagement.Web.ViewModels.Analytics.AnalyticsFilterViewModel
+@using TrainingManagement.Application.Analytics
+
+<form method="get" class="card card-body border-0 shadow-sm my-3">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label asp-for="Period" class="form-label">Période</label>
+            <select asp-for="Period" class="form-select" id="analytics-period">
+                <option value="@AnalyticsPeriod.Last7Days">7 derniers jours</option>
+                <option value="@AnalyticsPeriod.Last30Days">30 derniers jours</option>
+                <option value="@AnalyticsPeriod.Last90Days">90 derniers jours</option>
+                <option value="@AnalyticsPeriod.CurrentYear">Année en cours</option>
+                <option value="@AnalyticsPeriod.Custom">Période personnalisée</option>
+            </select>
+        </div>
+        <div class="col-md-3 analytics-custom-date">
+            <label asp-for="DateFrom" class="form-label">Du</label>
+            <input asp-for="DateFrom" class="form-control" />
+        </div>
+        <div class="col-md-3 analytics-custom-date">
+            <label asp-for="DateTo" class="form-label">Au</label>
+            <input asp-for="DateTo" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100" type="submit">Appliquer</button>
+        </div>
+    </div>
+    <div asp-validation-summary="ModelOnly" class="text-danger mt-2"></div>
+</form>
+
+<script>
+    (() => {
+        const period = document.getElementById('analytics-period');
+        const dates = document.querySelectorAll('.analytics-custom-date');
+        const refresh = () => dates.forEach(element =>
+            element.classList.toggle('d-none', period.value !== '@AnalyticsPeriod.Custom'));
+        period.addEventListener('change', refresh);
+        refresh();
+    })();
+</script>

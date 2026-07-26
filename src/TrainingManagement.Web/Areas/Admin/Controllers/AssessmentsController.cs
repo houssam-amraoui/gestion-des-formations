@@ -28,7 +28,7 @@ public sealed class AssessmentsController(IAssessmentService service) : Controll
         if (!ModelState.IsValid) return View(model);
         var result = await service.CreateAsync(new(model.LessonId, model.Title, model.Slug, model.Description,
             model.AssessmentType, model.Order, model.PassingScore, model.MaximumAttempts, model.TimeLimitMinutes,
-            model.ShuffleQuestions, model.ShowCorrectAnswers), token);
+            model.ShuffleQuestions, model.ShowCorrectAnswers, model.IsMandatory), token);
         if (!result.Succeeded) { ModelState.AddModelError("", result.Error!); return View(model); }
         TempData["SuccessMessage"] = "L’évaluation a été créée.";
         return RedirectToAction(nameof(Details), new { id = result.Value });
@@ -40,7 +40,8 @@ public sealed class AssessmentsController(IAssessmentService service) : Controll
         return x is null ? NotFound() : View(new AssessmentEditViewModel { Id=x.Id, LessonId=x.LessonId,
             Title=x.Title, Slug=x.Slug, Description=x.Description, AssessmentType=x.AssessmentType,
             Order=x.Order, PassingScore=x.PassingScore, MaximumAttempts=x.MaximumAttempts,
-            TimeLimitMinutes=x.TimeLimitMinutes, ShuffleQuestions=x.ShuffleQuestions, ShowCorrectAnswers=x.ShowCorrectAnswers });
+            TimeLimitMinutes=x.TimeLimitMinutes, ShuffleQuestions=x.ShuffleQuestions,
+            ShowCorrectAnswers=x.ShowCorrectAnswers, IsMandatory=x.IsMandatory });
     }
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, AssessmentEditViewModel model, CancellationToken token)
@@ -49,7 +50,8 @@ public sealed class AssessmentsController(IAssessmentService service) : Controll
         if (!ModelState.IsValid) return View(model);
         var result = await service.UpdateAsync(new(model.Id, model.LessonId, model.Title, model.Slug,
             model.Description, model.AssessmentType, model.Order!.Value, model.PassingScore,
-            model.MaximumAttempts, model.TimeLimitMinutes, model.ShuffleQuestions, model.ShowCorrectAnswers), token);
+            model.MaximumAttempts, model.TimeLimitMinutes, model.ShuffleQuestions,
+            model.ShowCorrectAnswers, model.IsMandatory), token);
         if (!result.Succeeded) { ModelState.AddModelError("", result.Error!); return View(model); }
         TempData["SuccessMessage"] = "L’évaluation a été modifiée.";
         return RedirectToAction(nameof(Details), new { id });
