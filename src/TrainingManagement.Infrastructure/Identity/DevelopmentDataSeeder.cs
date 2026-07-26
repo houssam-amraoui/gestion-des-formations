@@ -440,7 +440,16 @@ public sealed class DevelopmentDataSeeder(
         var profile = await dbContext.AiTrainerProfiles
             .SingleOrDefaultAsync(x => x.TrainingId == training.Id);
         if (profile is not null)
+        {
+            if (profile.Provider.Equals("Mock", StringComparison.OrdinalIgnoreCase) &&
+                !profile.AllowAvatar)
+            {
+                profile.AllowAvatar = true;
+                profile.UpdatedAt = DateTime.UtcNow;
+                await dbContext.SaveChangesAsync();
+            }
             return;
+        }
 
         dbContext.AiTrainerProfiles.Add(new AiTrainerProfile
         {
@@ -456,7 +465,7 @@ public sealed class DevelopmentDataSeeder(
             AllowTextInput = true,
             AllowAudioInput = true,
             AllowAudioOutput = false,
-            AllowAvatar = false,
+            AllowAvatar = true,
             MaximumMessagesPerSession = 20,
             MaximumSessionMinutes = 30,
             CreatedAt = DateTime.UtcNow

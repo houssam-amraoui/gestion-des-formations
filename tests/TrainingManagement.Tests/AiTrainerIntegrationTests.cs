@@ -134,6 +134,14 @@ public sealed class AiTrainerIntegrationTests
         Assert.True(result.Succeeded); Assert.StartsWith("mock-", result.ProviderSessionId);
     }
     [Fact] public async Task MockProvider_HealthIsHealthy() => Assert.True(await new MockAiProvider().HealthCheckAsync());
+    [Fact] public async Task MockProvider_CreatesSimulatedVideoCall()
+    {
+        var result = await new MockAiProvider().CreateAvatarSessionAsync(
+            new(Guid.NewGuid(), "Coach", "fr-FR", null, null, "prompt", "bonjour", true, false));
+        Assert.True(result.Succeeded);
+        Assert.Equal("simulated", result.Status);
+        Assert.StartsWith("mock-avatar-", result.ProviderSessionId);
+    }
     [Fact] public async Task MockProvider_TranscribesAudio()
     {
         var result = await new MockAiProvider().TranscribeAsync(new MemoryStream([1]), "audio/webm", "fr-FR");
@@ -141,6 +149,14 @@ public sealed class AiTrainerIntegrationTests
     }
     [Fact] public async Task MockProvider_TtsFailsGracefully() =>
         Assert.Equal("audio_disabled", (await new MockAiProvider().SynthesizeAsync("x", "fr-FR", null)).Error!.Code);
+    [Theory]
+    [InlineData("fr-FR", "fr")]
+    [InlineData("fr", "fr")]
+    [InlineData("FR_fr", "fr")]
+    [InlineData("en-US", "en")]
+    [InlineData("", "en")]
+    public void AnamProvider_NormalizesTranscriptionLanguage(string language, string expected) =>
+        Assert.Equal(expected, AnamAiProvider.NormalizeLanguageCode(language));
 
     [Fact] public void Consent_IsValidForMatchingProviderAndPolicy()
     {
@@ -189,6 +205,7 @@ public sealed class AiTrainerIntegrationTests
     [InlineData(typeof(LearnerAiController), "SendMessage", "ai-message")]
     [InlineData(typeof(LearnerAiController), "UploadAudio", "ai-audio")]
     [InlineData(typeof(LearnerAiController), "Session", "ai-status")]
+    [InlineData(typeof(LearnerAiController), "AvatarAccess", "ai-session-start")]
     public void LearnerEndpoints_HaveRateLimits(Type controller, string action, string policy) =>
         Assert.Equal(policy, controller.GetMethod(action)!.GetCustomAttributes(typeof(EnableRateLimitingAttribute), true)
             .Cast<EnableRateLimitingAttribute>().Single().PolicyName);
@@ -199,9 +216,25 @@ public sealed class AiTrainerIntegrationTests
     [InlineData("AcceptAudioConsent")]
     [InlineData("RevokeAudioConsent")]
     [InlineData("End")]
+    [InlineData("AvatarAccess")]
     public void LearnerPostEndpoints_UseAntiforgery(string action) =>
         Assert.NotEmpty(typeof(LearnerAiController).GetMethods().Single(x => x.Name == action)
             .GetCustomAttributes(typeof(ValidateAntiForgeryTokenAttribute), true));
+
+    [Fact] public void AdminAvatarAccess_UsesAntiforgery() =>
+        Assert.NotEmpty(typeof(AdminSessionsController).GetMethod("AvatarAccess")!
+            .GetCustomAttributes(typeof(ValidateAntiForgeryTokenAttribute), true));
+    [Fact] public void AdminAvatarAccess_IsRateLimited() =>
+        Assert.Equal("ai-session-start", typeof(AdminSessionsController).GetMethod("AvatarAccess")!
+            .GetCustomAttributes(typeof(EnableRateLimitingAttribute), true)
+            .Cast<EnableRateLimitingAttribute>().Single().PolicyName);
+    [Fact] public void AdminAudioUpload_UsesAntiforgery() =>
+        Assert.NotEmpty(typeof(AdminSessionsController).GetMethod("UploadAudio")!
+            .GetCustomAttributes(typeof(ValidateAntiForgeryTokenAttribute), true));
+    [Fact] public void AdminAudioUpload_IsRateLimited() =>
+        Assert.Equal("ai-audio", typeof(AdminSessionsController).GetMethod("UploadAudio")!
+            .GetCustomAttributes(typeof(EnableRateLimitingAttribute), true)
+            .Cast<EnableRateLimitingAttribute>().Single().PolicyName);
 
     [Fact] public void ProfileViewModel_RequiresTraining() => Assert.False(IsValid(new AiTrainerProfileFormViewModel { TrainingId = 0, DisplayName = "Coach" }));
     [Fact] public void ProfileViewModel_RequiresName() => Assert.False(IsValid(new AiTrainerProfileFormViewModel { TrainingId = 1, DisplayName = "" }));

@@ -57,3 +57,89 @@ a { color:var(--tm-primary); }
 .curriculum .accordion-item { border-radius:.75rem!important; overflow:hidden; margin-bottom:.75rem; border:1px solid #e4e5ee; }
 .curriculum-lesson { display:flex; justify-content:space-between; gap:1rem; padding:.85rem; border-bottom:1px solid #ececf2; text-decoration:none; color:inherit; }
 .curriculum-lesson:hover { background:var(--tm-soft); color:var(--tm-primary); }
+.ai-call {
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
+.ai-call-stage {
+  position: relative;
+  min-height: 420px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 25%, #344767 0, #151a2d 52%, #090d18 100%);
+}
+
+.ai-call-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #090d18;
+}
+
+.ai-call-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.ai-call-avatar {
+  display: grid;
+  width: 132px;
+  height: 132px;
+  margin-bottom: 1.25rem;
+  place-items: center;
+  border: 4px solid rgba(255, 255, 255, .7);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #0d6efd, #6f42c1);
+  box-shadow: 0 0 0 12px rgba(255, 255, 255, .08);
+  font-size: 2.4rem;
+  font-weight: 700;
+}
+
+.ai-call.is-simulated .ai-call-avatar {
+  animation: ai-call-pulse 1.8s ease-in-out infinite;
+}
+
+.ai-call-overlay {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  display: flex;
+  justify-content: space-between;
+  color: #fff;
+}
+
+.ai-call-status,
+.ai-call-duration {
+  padding: .4rem .75rem;
+  border-radius: 2rem;
+  background: rgba(0, 0, 0, .62);
+  backdrop-filter: blur(6px);
+  font-size: .875rem;
+}
+
+.ai-call.is-connected .ai-call-status::before {
+  display: inline-block;
+  width: .55rem;
+  height: .55rem;
+  margin-right: .4rem;
+  border-radius: 50%;
+  background: #28d17c;
+  content: "";
+}
+
+@keyframes ai-call-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 12px rgba(255, 255, 255, .08); }
+  50% { transform: scale(1.04); box-shadow: 0 0 0 20px rgba(13, 110, 253, .12); }
+}
+
+@media (max-width: 767.98px) {
+  .ai-call-stage { min-height: 330px; }
+}

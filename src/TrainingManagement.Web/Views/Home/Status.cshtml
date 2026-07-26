@@ -1,0 +1,16 @@
+@model ErrorViewModel
+@{
+    ViewData["Title"] = $"Erreur {Model.StatusCode}";
+    var message = Model.StatusCode switch {
+        400 => "La demande est invalide.",
+        403 => "Vous n’êtes pas autorisé à accéder à cette ressource.",
+        404 => "La page demandée est introuvable.",
+        429 => "Trop de demandes ont été envoyées. Réessayez dans quelques instants.",
+        _ => "Le service est temporairement indisponible."
+    };
+}
+<div class="container py-5 text-center">
+    <h1 class="display-4">@Model.StatusCode</h1><p class="lead">@message</p>
+    @if (Model.ShowRequestId) { <p class="text-secondary">Référence : <code>@Model.RequestId</code></p> }
+    <a asp-action="Index" class="btn btn-primary">Retour à l’accueil</a>
+</div>

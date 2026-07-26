@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TrainingManagement.Application.Certificates;
 using TrainingManagement.Domain.Constants;
 using TrainingManagement.Infrastructure.Identity;
@@ -20,6 +21,7 @@ public sealed class CertificatesController(ICertificateService service, UserMana
         var item = await service.GetForLearnerAsync(id, user, token);
         return item is null ? NotFound() : View(item);
     }
+    [EnableRateLimiting("download")]
     public async Task<IActionResult> Download(int id, CancellationToken token)
     {
         var user = users.GetUserId(User); if (user is null) return Challenge();

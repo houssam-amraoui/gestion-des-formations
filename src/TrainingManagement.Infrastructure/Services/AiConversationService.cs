@@ -126,6 +126,44 @@ public sealed class AiConversationService(
         return Map(session, null);
     }
 
+    public async Task<ServiceResult<AiAvatarAccess>> CreateAvatarAccessAsync(Guid id, string userId,
+        bool isAdmin, bool isTrainer, CancellationToken token = default)
+    {
+        var session = await AuthorizedQuery(id, userId, isAdmin, isTrainer)
+            .Include(x => x.AiTrainerProfile).ThenInclude(x => x.Training)
+            .Include(x => x.Lesson).ThenInclude(x => x.TrainingModule).ThenInclude(x => x.Training)
+            .SingleOrDefaultAsync(token);
+        if (session is null)
+            return ServiceResult<AiAvatarAccess>.Failure("Session IA introuvable.");
+        if (session.Status != AiConversationStatus.Active || session.IsExpired(DateTime.UtcNow))
+            return ServiceResult<AiAvatarAccess>.Failure("Cette session IA n’est plus active.");
+        if (!session.AiTrainerProfile.AllowAvatar || !options.Value.EnableAvatar)
+            return ServiceResult<AiAvatarAccess>.Failure("L’avatar vidéo n’est pas activé pour cette formation.");
+
+        var provider = providers.Get(session.AiTrainerProfile.Provider);
+        if (provider is not IAiAvatarProvider avatarProvider)
+            return ServiceResult<AiAvatarAccess>.Failure("Le fournisseur configuré ne prend pas en charge l’avatar.");
+
+        var context = await contexts.BuildAsync(session.LessonId, token);
+        var result = await avatarProvider.CreateAvatarSessionAsync(new(
+            session.Id, session.AiTrainerProfile.DisplayName, session.AiTrainerProfile.LanguageCode,
+            session.AiTrainerProfile.AvatarId, session.AiTrainerProfile.VoiceId,
+            BuildSystemPrompt(session.AiTrainerProfile, context),
+            session.AiTrainerProfile.WelcomeMessage ??
+                $"Bonjour, je suis {session.AiTrainerProfile.DisplayName}.",
+            true, session.AiTrainerProfile.AllowAudioOutput), token);
+
+        AddUsage(session.Id, provider.Name, "CreateAvatarAccess", result.Succeeded,
+            result.Error?.Code, null, null, null);
+        await db.SaveChangesAsync(token);
+        if (!result.Succeeded)
+            return ServiceResult<AiAvatarAccess>.Failure(result.Error?.UserMessage ??
+                "La connexion vidéo est temporairement indisponible.");
+
+        return ServiceResult<AiAvatarAccess>.Success(new(provider.Name, result.ClientToken,
+            result.Status ?? "ready"));
+    }
+
     public async Task<ServiceResult<AiConversationReply>> SendTextAsync(Guid id, string userId,
         string text, bool isAdmin, bool isTrainer, CancellationToken token = default) =>
         await SendTextCoreAsync(id, userId, text, isAdmin, isTrainer, false, token);

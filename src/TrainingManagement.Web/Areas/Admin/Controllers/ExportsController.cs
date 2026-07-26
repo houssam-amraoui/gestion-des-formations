@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TrainingManagement.Application.Exports;
 using TrainingManagement.Domain.Constants;
 
 namespace TrainingManagement.Web.Areas.Admin.Controllers;
 
-[Area("Admin"), Authorize(Roles = AppRoles.Admin)]
+[Area("Admin"), Authorize(Roles = AppRoles.Admin), EnableRateLimiting("export")]
 public sealed class ExportsController(ICsvExportService service) : Controller
 {
     public async Task<IActionResult> Enrollments(CancellationToken t) => Csv(await service.ExportAdminEnrollmentsAsync(t));

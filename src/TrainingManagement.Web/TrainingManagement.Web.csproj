@@ -17,6 +17,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>TrainingManagement.Web</RootNamespace>
+    <UserSecretsId>TrainingManagement.Web-8c57fc4c-5c73-4b61-a9c7-5e928a302bf1</UserSecretsId>
   </PropertyGroup>
 
 </Project>

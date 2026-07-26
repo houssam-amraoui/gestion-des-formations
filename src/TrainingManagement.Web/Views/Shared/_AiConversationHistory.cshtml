@@ -1,14 +1,16 @@
 @model AiSessionModel
 <div class="ai-conversation border rounded-3 p-3 bg-body-tertiary overflow-auto" style="max-height:520px"
+     data-ai-conversation
      aria-live="polite" aria-label="Historique de conversation">
     @if (Model.Messages.Count == 0)
     {
-        <p class="text-secondary text-center">Aucun message.</p>
+        <p class="text-secondary text-center" data-ai-empty>Aucun message.</p>
     }
     @foreach (var message in Model.Messages)
     {
         var assistant = message.Role == AiMessageRole.Assistant;
-        <article class="d-flex mb-3 @(assistant ? "" : "justify-content-end")">
+        <article class="d-flex mb-3 @(assistant ? "" : "justify-content-end")"
+                 data-ai-stored-message>
             <div class="p-3 rounded-3 @(assistant ? "bg-white border" : "bg-primary text-white")"
                  style="max-width:85%">
                 <div class="small fw-semibold mb-1">@(assistant ? Model.TrainerDisplayName : "Vous")</div>
@@ -20,4 +22,5 @@
             </div>
         </article>
     }
+    <div data-ai-live-transcript></div>
 </div>

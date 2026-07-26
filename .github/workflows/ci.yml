@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ASPNETCORE_ENVIRONMENT: Testing
+      AiTrainer__Enabled: "false"
+      AiTrainer__Provider: Mock
+      ConnectionStrings__DefaultConnection: "Data Source=/tmp/training-management-ci.db"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.302
+      - name: Restore
+        run: dotnet restore TrainingManagement.sln
+      - name: Build Release
+        run: dotnet build TrainingManagement.sln --configuration Release --no-restore
+      - name: Test Release
+        run: dotnet test TrainingManagement.sln --configuration Release --no-build --no-restore
+      - name: Publish web
+        run: dotnet publish src/TrainingManagement.Web/TrainingManagement.Web.csproj --configuration Release --no-build --output artifacts/web
+      - name: Build Docker image
+        run: docker build --tag training-management:ci .

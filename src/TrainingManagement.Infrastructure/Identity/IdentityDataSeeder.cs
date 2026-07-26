@@ -18,6 +18,7 @@ public sealed class IdentityDataSeeder(
         }
 
         var settings = options.Value;
+        if (!settings.Enabled) return;
         var admin = await userManager.FindByEmailAsync(settings.Email);
         if (admin is null)
         {

@@ -41,8 +41,25 @@ public sealed class AiTrainerController(IAiTrainerProfileService profiles,
         { Session = session, Message = new() { SessionId = id } });
     }
 
+    [HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("ai-session-start"),
+     ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> AvatarAccess(Guid id, CancellationToken token)
+    {
+        var result = await conversations.CreateAvatarAccessAsync(id, UserId(), false, true, token);
+        return result.Succeeded
+            ? Json(new
+            {
+                provider = result.Value!.Provider,
+                clientToken = result.Value.ClientToken,
+                status = result.Value.Status
+            })
+            : BadRequest(new { error = result.Error });
+    }
+
     [HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("ai-message")]
-    public async Task<IActionResult> SendMessage(AiSendMessageViewModel model, CancellationToken token)
+    public async Task<IActionResult> SendMessage(
+        [Bind(Prefix = "Message")] AiSendMessageViewModel model,
+        CancellationToken token)
     {
         var result = await conversations.SendTextAsync(model.SessionId, UserId(), model.Text,
             false, true, token);

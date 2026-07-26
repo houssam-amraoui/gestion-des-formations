@@ -36,7 +36,7 @@ public sealed class AnamAiProvider(HttpClient client, IOptions<AnamOptions> opti
         message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
         message.Content = JsonContent.Create(new AnamSessionTokenRequest(new(
             request.DisplayName, request.AvatarId, request.VoiceId, settings.LlmId,
-            request.SystemPrompt)));
+            request.SystemPrompt, NormalizeLanguageCode(request.LanguageCode))));
         try
         {
             using var response = await client.SendAsync(message, HttpCompletionOption.ResponseHeadersRead, token);
@@ -94,7 +94,14 @@ public sealed class AnamAiProvider(HttpClient client, IOptions<AnamOptions> opti
         [property: JsonPropertyName("avatarId")] string AvatarId,
         [property: JsonPropertyName("voiceId")] string VoiceId,
         [property: JsonPropertyName("llmId")] string LlmId,
-        [property: JsonPropertyName("systemPrompt")] string SystemPrompt);
+        [property: JsonPropertyName("systemPrompt")] string SystemPrompt,
+        [property: JsonPropertyName("languageCode")] string LanguageCode);
     private sealed record AnamSessionTokenResponse(
         [property: JsonPropertyName("sessionToken")] string SessionToken);
+
+    public static string NormalizeLanguageCode(string? languageCode)
+    {
+        var primary = languageCode?.Trim().Split(['-', '_'], 2)[0].ToLowerInvariant();
+        return primary is { Length: 2 } && primary.All(char.IsLetter) ? primary : "en";
+    }
 }

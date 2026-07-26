@@ -1,26 +1,61 @@
 @model AiSessionModel
-<section class="card border-0 shadow-sm ai-avatar-panel" aria-label="Panneau avatar">
-    <div class="card-body text-center p-4">
-        <div class="rounded-circle bg-primary-subtle d-inline-flex align-items-center justify-content-center mb-3"
-             style="width:96px;height:96px;font-size:2.5rem" aria-hidden="true">🤖</div>
-        <h2 class="h5">@Model.TrainerDisplayName</h2>
-        @if (Model.AllowAvatar && Model.AvatarStatus is "ready" or "presenting" or "simulated")
+@{
+    var area = ViewContext.RouteData.Values["area"]?.ToString();
+    var avatarController = area == "Admin" ? "AiSessions" : "AiTrainer";
+    var avatarEndpoint = Url.Action("AvatarAccess", avatarController, new { area, id = Model.Id });
+    var canCall = Model.Status == AiConversationStatus.Active && Model.AllowAvatar;
+    var latestAssistant = Model.Messages.LastOrDefault(x => x.Role == AiMessageRole.Assistant);
+}
+<section class="card border-0 shadow-sm ai-call"
+         data-ai-call
+         data-session-id="@Model.Id"
+         data-provider="@Model.Provider"
+         data-avatar-endpoint="@avatarEndpoint"
+         data-trainer-name="@Model.TrainerDisplayName"
+         data-latest-message-id="@latestAssistant?.Id"
+         data-latest-message="@latestAssistant?.Text"
+         aria-label="Appel vidéo avec le formateur IA">
+    <div class="ai-call-stage">
+        <video id="ai-persona-video" class="ai-call-video" autoplay playsinline
+               aria-label="Vidéo de @Model.TrainerDisplayName"></video>
+        <div class="ai-call-placeholder" data-ai-call-placeholder>
+            <div class="ai-call-avatar" aria-hidden="true">AI</div>
+            <h2 class="h4 mb-1">@Model.TrainerDisplayName</h2>
+            <p class="mb-0 text-white-50">Votre formateur IA</p>
+        </div>
+        <div class="ai-call-overlay">
+            <span class="ai-call-status" data-ai-call-status role="status" aria-live="polite">
+                @(canCall ? "Prêt à démarrer" : "Mode texte disponible")
+            </span>
+            <span class="ai-call-duration d-none" data-ai-call-duration>00:00</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <form class="d-none" data-ai-call-token>
+            @Html.AntiForgeryToken()
+        </form>
+        @if (canCall)
         {
-            <span class="badge text-bg-success">Avatar interactif disponible</span>
-        }
-        else if (Model.AllowAudioOutput)
-        {
-            <span class="badge text-bg-info">Mode audio disponible</span>
+            <div class="d-flex justify-content-center gap-2">
+                <button type="button" class="btn btn-success rounded-pill px-4" data-ai-call-start>
+                    <span aria-hidden="true">📹</span> Démarrer l’appel
+                </button>
+                <button type="button" class="btn btn-danger rounded-pill px-4 d-none" data-ai-call-stop>
+                    <span aria-hidden="true">☎</span> Raccrocher
+                </button>
+                @if (Model.AllowAudioInput)
+                {
+                    <button type="button" class="btn btn-outline-secondary rounded-circle d-none"
+                            data-ai-call-mute aria-pressed="false" aria-label="Couper le microphone">🎙️</button>
+                }
+            </div>
         }
         else
         {
-            <span class="badge text-bg-secondary">Mode texte</span>
-        }
-        @if (Model.AllowAvatar && Model.AvatarStatus is "unavailable")
-        {
-            <p class="alert alert-warning small mt-3 mb-0">
-                L’avatar est temporairement indisponible. Vous pouvez continuer la conversation en texte ou en audio.
+            <p class="small text-secondary text-center mb-0">
+                L’appel vidéo n’est pas activé pour cette session. La conversation texte reste disponible.
             </p>
         }
+        <div class="alert alert-warning small mt-3 mb-0 d-none" data-ai-call-error role="alert"></div>
     </div>
 </section>

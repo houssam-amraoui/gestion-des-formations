@@ -42,6 +42,8 @@ public sealed record AiSessionFilter(int? TrainingId = null, string? User = null
 public sealed record AiConversationReply(AiSessionModel Session, string AssistantText,
     bool AudioAvailable, string? AvatarStatus, long ElapsedMilliseconds);
 
+public sealed record AiAvatarAccess(string Provider, string? ClientToken, string Status);
+
 public sealed record LessonAiAvailability(int LessonId, bool Available, string? Reason,
     int? ProfileId, string? DisplayName, string? Description, string? LanguageCode,
     bool AllowAudioInput, bool AllowAudioOutput, bool AllowAvatar);
@@ -86,6 +88,8 @@ public interface IAiConversationService
         bool isTrainer, CancellationToken cancellationToken = default);
     Task<AiSessionModel?> GetAsync(Guid id, string userId, bool isAdmin, bool isTrainer,
         CancellationToken cancellationToken = default);
+    Task<ServiceResult<AiAvatarAccess>> CreateAvatarAccessAsync(Guid id, string userId,
+        bool isAdmin, bool isTrainer, CancellationToken cancellationToken = default);
     Task<ServiceResult<AiConversationReply>> SendTextAsync(Guid id, string userId, string text,
         bool isAdmin, bool isTrainer, CancellationToken cancellationToken = default);
     Task<ServiceResult<AiConversationReply>> SendAudioAsync(Guid id, string userId, Stream audio,

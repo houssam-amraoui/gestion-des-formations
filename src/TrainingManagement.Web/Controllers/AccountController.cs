@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TrainingManagement.Application.Authentication;
 using TrainingManagement.Infrastructure.Identity;
 using TrainingManagement.Web.ViewModels.Account;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace TrainingManagement.Web.Controllers;
 
@@ -16,7 +17,7 @@ public sealed class AccountController(
     [AllowAnonymous, HttpGet]
     public IActionResult Register() => View(new RegisterViewModel());
 
-    [AllowAnonymous, HttpPost, ValidateAntiForgeryToken]
+    [AllowAnonymous, HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("account")]
     public async Task<IActionResult> Register(RegisterViewModel model)
     {
         if (!ModelState.IsValid) return View(model);
@@ -38,9 +39,15 @@ public sealed class AccountController(
     }
 
     [AllowAnonymous, HttpGet]
-    public IActionResult Login(string? returnUrl = null) => View(new LoginViewModel { ReturnUrl = returnUrl });
+    public IActionResult Login(string? returnUrl = null, bool requestExpired = false)
+    {
+        if (requestExpired)
+            ModelState.AddModelError(string.Empty,
+                "La page de connexion avait expiré. Un nouveau formulaire sécurisé a été généré ; reconnectez-vous.");
+        return View(new LoginViewModel { ReturnUrl = returnUrl });
+    }
 
-    [AllowAnonymous, HttpPost, ValidateAntiForgeryToken]
+    [AllowAnonymous, HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("account")]
     public async Task<IActionResult> Login(LoginViewModel model)
     {
         if (!ModelState.IsValid) return View(model);

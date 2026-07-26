@@ -2,6 +2,15 @@
 @{ ViewData["Title"] = "Session IA"; }
 <div class="container py-5"><a asp-action="Index">← Sessions IA</a><div class="d-flex justify-content-between mt-2"><div><h1 class="h2">@Model.TrainingTitle</h1><p>@Model.LessonTitle · <code>@Model.Id</code></p></div><span class="badge text-bg-info align-self-start">@Model.Status</span></div>
 <div class="alert alert-secondary">Le prompt système, les clés, tokens et en-têtes fournisseur ne sont pas affichés.</div>
-<div class="row g-4"><div class="col-lg-4"><partial name="/Views/Shared/_AiAvatarPanel.cshtml" model="Model"/></div><div class="col-lg-8"><partial name="/Views/Shared/_AiConversationHistory.cshtml" model="Model"/></div></div>
+<div class="row g-4"><div class="col-lg-4"><partial name="/Views/Shared/_AiAvatarPanel.cshtml" model="Model"/>
+@if (Model.Status == AiConversationStatus.Active && Model.AllowAudioInput)
+{
+    <form asp-action="UploadAudio" asp-route-id="@Model.Id" method="post"
+          enctype="multipart/form-data" class="d-none" data-ai-audio-form>
+        <input type="file" name="audio" data-ai-audio-file
+               accept="audio/webm,audio/wav,audio/mpeg" />
+    </form>
+}
+</div><div class="col-lg-8"><partial name="/Views/Shared/_AiConversationHistory.cshtml" model="Model"/></div></div>
 @if (Model.Status == AiConversationStatus.Active) { <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="mt-3"><button class="btn btn-danger" data-confirm="Annuler cette session ?">Annuler la session</button></form> }
 </div>

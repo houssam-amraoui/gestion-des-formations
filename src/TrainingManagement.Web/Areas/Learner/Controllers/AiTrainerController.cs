@@ -39,8 +39,35 @@ public sealed class AiTrainerController(IAiConversationService conversations,
         });
     }
 
+    [HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("ai-session-start"),
+     ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> AvatarAccess(Guid id, CancellationToken token)
+    {
+        var userId = UserId();
+        var session = await conversations.GetAsync(id, userId, false, false, token);
+        if (session is null) return NotFound();
+        if (session.AllowAudioInput &&
+            !(await consents.GetAsync(userId, session.Provider, token)).IsValid)
+            return BadRequest(new
+            {
+                error = "Votre consentement audio est requis avant de démarrer l’appel vidéo."
+            });
+
+        var result = await conversations.CreateAvatarAccessAsync(id, userId, false, false, token);
+        return result.Succeeded
+            ? Json(new
+            {
+                provider = result.Value!.Provider,
+                clientToken = result.Value.ClientToken,
+                status = result.Value.Status
+            })
+            : BadRequest(new { error = result.Error });
+    }
+
     [HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("ai-message")]
-    public async Task<IActionResult> SendMessage(AiSendMessageViewModel model, CancellationToken token)
+    public async Task<IActionResult> SendMessage(
+        [Bind(Prefix = "Message")] AiSendMessageViewModel model,
+        CancellationToken token)
     {
         if (!ModelState.IsValid)
         {

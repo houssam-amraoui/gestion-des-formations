@@ -17,8 +17,13 @@ app-verification.*.log
 *.db-wal
 App_Data/Certificates/
 **/App_Data/Certificates/
+**/App_Data/Keys/
+**/App_Data/Temp/
 appsettings.Local.json
 .env
+.env.*
+!.env.example
+artifacts/
 
 ## OS / tooling
 .DS_Store

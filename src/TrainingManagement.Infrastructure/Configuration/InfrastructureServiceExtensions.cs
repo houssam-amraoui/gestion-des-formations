@@ -42,10 +42,12 @@ public static class InfrastructureServiceExtensions
 
         services.AddDbContext<ApplicationDbContext>(options =>
         {
-            if (environment.IsDevelopment())
-                options.UseSqlite(connectionString);
+            if (environment.IsProduction())
+                options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(
+                    maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10),
+                    errorNumbersToAdd: null).CommandTimeout(30));
             else
-                options.UseSqlServer(connectionString);
+                options.UseSqlite(connectionString);
         });
 
         services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -71,11 +73,16 @@ public static class InfrastructureServiceExtensions
                 ? Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest
                 : Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
             options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+            options.Cookie.Name = environment.IsDevelopment()
+                ? "TrainingManagement.Auth" : "__Host-TrainingManagement.Auth";
+            options.ExpireTimeSpan = TimeSpan.FromHours(8);
+            options.SlidingExpiration = true;
         });
 
         services.AddOptions<SeedAdminOptions>()
             .Bind(configuration.GetSection(SeedAdminOptions.SectionName))
-            .ValidateDataAnnotations()
+            .ValidateDataAnnotations().Validate(x => environment.IsDevelopment() || x.IsValid(out _),
+                "La configuration du seed administrateur est invalide.")
             .ValidateOnStart();
 
         services.AddScoped<IAccountRegistrationService, AccountRegistrationService>();
@@ -106,9 +113,9 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IAiConsentService, AiConsentService>();
         services.AddScoped<IAiUsageService, AiUsageService>();
         services.AddSingleton<MockAiProvider>();
-        services.AddSingleton<IAiProvider>(sp => sp.GetRequiredService<MockAiProvider>());
         if (environment.IsDevelopment())
         {
+            services.AddSingleton<IAiProvider>(sp => sp.GetRequiredService<MockAiProvider>());
             services.AddSingleton<IAiAvatarProvider>(sp => sp.GetRequiredService<MockAiProvider>());
             services.AddSingleton<IAiLanguageModelProvider>(sp => sp.GetRequiredService<MockAiProvider>());
             services.AddSingleton<IAiSpeechToTextProvider>(sp => sp.GetRequiredService<MockAiProvider>());
@@ -151,12 +158,23 @@ public static class InfrastructureServiceExtensions
                 "Le fournisseur Mock est interdit en Production.")
             .ValidateOnStart();
         services.AddOptions<AnamOptions>().Bind(configuration.GetSection(AnamOptions.SectionName))
-            .ValidateDataAnnotations().ValidateOnStart();
+            .ValidateDataAnnotations()
+            .Validate(value => !configuration.GetValue<bool>("AiTrainer:Enabled") ||
+                !configuration["AiTrainer:Provider"]!.Equals("Anam", StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrWhiteSpace(value.ApiKey) && !string.IsNullOrWhiteSpace(value.LlmId)),
+                "Le fournisseur Anam activé exige une clé et un identifiant de modèle.")
+            .ValidateOnStart();
         services.Configure<ExternalAiProviderOptions>("HeyGen", configuration.GetSection("HeyGen"));
         services.Configure<ExternalAiProviderOptions>("LanguageModel", configuration.GetSection("LanguageModel"));
         services.Configure<ExternalAiProviderOptions>("SpeechToText", configuration.GetSection("SpeechToText"));
         services.Configure<ExternalAiProviderOptions>("TextToSpeech", configuration.GetSection("TextToSpeech"));
         services.AddOptions<CertificateStorageOptions>().Bind(configuration.GetSection(CertificateStorageOptions.SectionName))
+            .ValidateDataAnnotations()
+            .Validate(x => x.Provider.Equals("Local", StringComparison.OrdinalIgnoreCase),
+                "Seul le stockage local persistant est disponible dans cette version.")
+            .ValidateOnStart();
+        services.AddOptions<DataProtectionStorageOptions>()
+            .Bind(configuration.GetSection(DataProtectionStorageOptions.SectionName))
             .ValidateDataAnnotations().ValidateOnStart();
         services.AddScoped<DevelopmentDataSeeder>();
         return services;
